@@ -13,45 +13,77 @@ object CPUStuff {
   val STA = 4.U(4.W)
   val LDI = 5.U(4.W)
   val JMP = 6.U(4.W)
-  val JC  = 7.U(4.W)
 
+  val JC  = 7.U(4.W)
   val JZ  = 8.U(4.W)
 
   val OUT = 14.U(4.W)
   val HLT = 15.U(4.W)
 }
 
-class CPU(width: Int) extends Module {
+class CPU(width: Int, autoLoad: Boolean) extends Module {
   val io = IO(new Bundle {
-    val halt    = Input(Bool())
-    val res  = Output(UInt(width.W))
+    val load = Input(Bool())
+    val addr = Input(UInt(width.W))
+    val data = Input(UInt(width.W))
+    val halt = Output(Bool())
+    val valid   = Output(Bool())
+    val output  = Output(UInt(width.W))
   })
 
+  /* A and B registers */
   var a = RegInit(0.U(width.W))
   var b = RegInit(0.U(width.W))
-  val memory = Mem(16, UInt(width.W))
 
-  /* Fetch Stage of the CPU */
-  var fetch = Module(new FetchStage(width))
+  /* Program Counter */
+  val pc = Module(new Counter(width))
+
+  /* Instructions */
+  var ins = Module(new InsDecoder(4, 4))
+  var insReg = RegInit(0.U(width.W))
+
+  /* Memory */
+  val insCache = Mem(16, UInt(width.W))
+  val dataCache = Mem(16, UInt(width.W))
+
+  /* Wireup a startup program */
+  if (autoLoad) {
+    for (i <- 0 until ProgramMemory.program.length)
+    {
+      insCache(i) := ProgramMemory.program(i)
+    }
+  }
+
+  /* Fetch Ins */
+  insReg := insCache(pc.io.out)
+
+  when (io.load) {
+    /* Wire pc enable to false when loading */
+    pc.io.en := false.B
+
+    insCache(io.addr) := io.data
+    ins.io.ins := 0.U
+  }.otherwise {
+    /* Wire Ins to instructionReg */
+    pc.io.en := true.B
+    ins.io.ins := insReg
+  }
 
   /* ALU will be wrapped into the Execute Stage and
    * controlled via control signals */
   var alu = Module(new ALU(width))
 
-  /* Tie to input for now */
-  fetch.io.halt := io.halt
-
   /* Wire ALU */
   alu.io.sel := true.B
   alu.io.inA := a
-  alu.io.inB := memory(fetch.io.data)
+  alu.io.inB := dataCache(ins.io.data)
 
   /* I think that's all you'd need to do for the Add/Sub
    * operations. */
-  when (fetch.io.opcode===CPUStuff.ADD) {
+  when (ins.io.opcode===CPUStuff.ADD) {
     alu.io.sel := true.B /* Select Addition */
     a := alu.io.out /* Put the output in the A register */
-  }.elsewhen(fetch.io.opcode===CPUStuff.SUB) {
+  }.elsewhen(ins.io.opcode===CPUStuff.SUB) {
     alu.io.sel := false.B /* Select Subtraction */
     a := alu.io.out /* Put the output in the A register */
   }.otherwise {
@@ -59,46 +91,71 @@ class CPU(width: Int) extends Module {
   }
 
   /* Load A register */
-  when (fetch.io.opcode===CPUStuff.LDA){
-    a := memory(fetch.io.data)
-  }.elsewhen(fetch.io.opcode===CPUStuff.LDI) {
-    a := fetch.io.data
+  when (ins.io.opcode===CPUStuff.LDA){
+    a := dataCache(ins.io.data)
+  }.elsewhen(ins.io.opcode===CPUStuff.LDI) {
+    a := ins.io.data
   }
 
-  when (fetch.io.opcode===CPUStuff.STA) {
-    memory(fetch.io.data) := a
+  /* Store from A */
+  when (ins.io.opcode===CPUStuff.STA) {
+    dataCache(ins.io.data) := a
   }
 
-  /* Temporary */
-  io.res := memory(1.U)
+  /* Jump */
+  when (ins.io.opcode===CPUStuff.JMP) {
+    pc.io.set := true.B
+    // pc.io.en := false.B
+    pc.io.in := ins.io.data
+  }.otherwise {
+    pc.io.set := false.B
+    // pc.io.en := true.B
+    pc.io.in := 0.U
+  }
 
-  // when (fetch.io.opcode===CPUStuff.NOP){
+  /* Halt */
+  when (ins.io.opcode===CPUStuff.HLT) {
+    io.halt := true.B
+  }. otherwise {
+    io.halt := false.B
+  }
+
+  /* Output */
+  when (ins.io.opcode===CPUStuff.OUT) {
+    io.valid := true.B
+    io.output := a
+  }.otherwise {
+    io.valid := false.B
+    io.output := 0.U
+  }
+
+  // when (ins.io.opcode===CPUStuff.NOP){
   //   printf("NOP\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.LDA){
+  // }.elsewhen(ins.io.opcode===CPUStuff.LDA){
   //   printf("LDA\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.ADD){
+  // }.elsewhen(ins.io.opcode===CPUStuff.ADD){
   //   printf("ADD\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.SUB){
+  // }.elsewhen(ins.io.opcode===CPUStuff.SUB){
   //   printf("SUB\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.STA){
+  // }.elsewhen(ins.io.opcode===CPUStuff.STA){
   //   printf("STA\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.LDI){
+  // }.elsewhen(ins.io.opcode===CPUStuff.LDI){
   //   printf("LDI\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.JMP){
+  // }.elsewhen(ins.io.opcode===CPUStuff.JMP){
   //   printf("JMP\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.JC){
+  // }.elsewhen(ins.io.opcode===CPUStuff.JC){
   //   printf("JC\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.JZ){
+  // }.elsewhen(ins.io.opcode===CPUStuff.JZ){
   //   printf("JZ\n")
-  // }.elsewhen(fetch.io.opcode===CPUStuff.OUT){
+  // }.elsewhen(ins.io.opcode===CPUStuff.OUT){
   //   printf("OUT\n")
   // }.otherwise {
   //   printf("HLT\n")
   // }
 
   /* Debug some shit */
-  // printf(p"Opcode: ${fetch.io.opcode}\n")
+  // printf(p"Opcode: ${ins.io.opcode}\n")
   // printf(p"A: ${a}\n")
-  // printf(p"B: ${memory(fetch.io.data)}\n")
+  // printf(p"B: ${memory(ins.io.data)}\n")
   // printf(p"Mem0: ${memory(0.U)}\n")
 }

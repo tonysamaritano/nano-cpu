@@ -17,7 +17,7 @@ verilate: compile-verilog
 	# Compiles generated cpp into library
 	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk ${TOP}__ALL.a
 
-build-cpu: verilate
+build-cpu:
 	# Compiles wrapper for simulator
 	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk ../src/main/cpp/main.o verilated.o
 	mv src/main/cpp/main.o ${BIN_DIR}
@@ -29,4 +29,4 @@ build-cpu: verilate
 		${BIN_DIR}/verilated.o \
 		-o ${BIN_DIR}/${TOP}
 
-all: build-cpu
+all: verilate build-cpu

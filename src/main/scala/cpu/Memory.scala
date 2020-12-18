@@ -15,8 +15,7 @@ object ProgramMemory {
     "b0100_0000".U, // STA $0x0     // Reg A into 0x0 address
     "b0001_0000".U, // LDA $0x0     // Load 0x0 into A Register
     "b0010_0000".U, // ADD $0x0     // Add address STORE_A to reg A
-    "b0100_0001".U, // STA $0x1     // Reg A into 0x1 address
-    "b0000_0000".U, // NOP          // NOP to flush pipeline
+    "b1110_0000".U, // OUT          // Outputs contents of reg A
     "b1111_0000".U  // HLT          // Halt processor
   )
 }
