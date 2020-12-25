@@ -105,11 +105,9 @@ class CPU(width: Int, autoLoad: Boolean) extends Module {
   /* Jump */
   when (ins.io.opcode===CPUStuff.JMP) {
     pc.io.set := true.B
-    // pc.io.en := false.B
     pc.io.in := ins.io.data
   }.otherwise {
     pc.io.set := false.B
-    // pc.io.en := true.B
     pc.io.in := 0.U
   }
 

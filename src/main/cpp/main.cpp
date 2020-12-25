@@ -3,6 +3,8 @@
 #include <vector>
 #include <unistd.h>
 
+#include <string>
+
 #include "verilated.h"
 #include "VCPU.h"
 
@@ -24,23 +26,41 @@ void step(VCPU *cpu, int steps);
 int main(int argc, char** argv, char** env) {
     Verilated::commandArgs(argc, argv);
 
+    char c;
+    int verbosity = 0;
+    std::string bin;
+    while ((c = getopt (argc, argv, "vb:")) != -1)
+    {
+        switch (c)
+        {
+        case 'v':
+            verbosity++;
+            break;
+        case 'b':
+            bin = std::string(optarg);
+            break;
+        default:
+            break;
+        }
+    }
+
     /* Attempt to load a binary file */
     std::vector<uint8_t> program;
-    if (argc == 2)
+    if (bin.empty())
     {
-        FILE *f = fopen(argv[1], "rb");
+        /* Load the default program if there is no binary
+         * file. */
+        program = defaultProgram;
+    }
+    else
+    {
+        FILE *f = fopen(bin.c_str(), "rb");
         uint8_t byte;
         while (fread(&byte, 1, 1, f) > 0)
         {
             program.push_back(byte);
         }
         fclose(f);
-    }
-    else
-    {
-        /* Load the default program if there is no binary
-         * file. */
-        program = defaultProgram;
     }
 
     /* Initialize the top level CPU */
@@ -67,10 +87,13 @@ int main(int argc, char** argv, char** env) {
         step(top, 1);
 
         /* Print CPU states */
-        VL_PRINTF("Out[%i]: ins 0x%2X res %u \n",
-            top->CPU__DOT__pc__DOT__register,
-            top->CPU__DOT__insReg, /* Internal variable */
-            top->io_output); /* IO */
+        if (verbosity > 0)
+        {
+            VL_PRINTF("Out[%i]: ins 0x%2X res %u \n",
+                top->CPU__DOT__pc__DOT__register,
+                top->CPU__DOT__insReg, /* Internal variable */
+                top->io_output); /* IO */
+        }
 
         /* Output */
         if (top->io_valid)

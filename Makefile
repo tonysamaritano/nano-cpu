@@ -8,11 +8,12 @@ clean:
 	rm -r ${BIN_DIR}
 
 compile-verilog:
-	sbt "runMain cpu.main --target-dir obj_dir"
+	mkdir -p ${BIN_DIR}
+	sbt "runMain cpu.main --target-dir ${BIN_DIR}"
 
-verilate: compile-verilog
+verilate:
 	# Verilator creates cpp code out of verilog files
-	verilator --cc obj_dir/${SRC}
+	verilator --cc ${BIN_DIR}/${SRC}
 
 	# Compiles generated cpp into library
 	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk ${TOP}__ALL.a
@@ -29,4 +30,4 @@ build-cpu:
 		${BIN_DIR}/verilated.o \
 		-o ${BIN_DIR}/${TOP}
 
-all: verilate build-cpu
+all: compile-verilog verilate build-cpu
