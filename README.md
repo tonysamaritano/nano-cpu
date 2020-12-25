@@ -4,6 +4,60 @@
 # Intro
 An 8-bit computer for learning how to build a computer from scratch.
 
+# How to build
+In order to build the CPU and simulate it, run the following commands:
+```
+# Builds all required source into a build/ folder to run the CPU
+make
+```
+
+```
+# Will load and run the default program
+./build/VCPU
+```
+Prints:
+> We got an output! out: 42
+
+## Advanced features
+I've built this to allow for more advance debugging features such as simulated trace via gtkwave (.vcd file) and printing out instructions per cycle. You can also load your own compiled program as a .bin
+
+```
+# Compile the example loop program
+make examples/loop
+```
+```
+./build/VCPU -t build/loop.vcd -b build/loop.bin -v
+```
+`-t` creates a trace file for debugging
+`-b` loads in a binary
+`-v` verbose output that prints instructions per clock
+
+Output:
+```
+We got an output! out: 0
+Out[6]: ins 0x61 res 0
+Out[1]: ins 0x 0 res 0
+Out[2]: ins 0x51 res 0
+Out[3]: ins 0x20 res 0
+Out[4]: ins 0x40 res 0
+Out[5]: ins 0xE0 res 1
+We got an output! out: 1
+Out[6]: ins 0x61 res 0
+Out[1]: ins 0x 0 res 0
+Out[2]: ins 0x51 res 0
+Out[3]: ins 0x20 res 0
+Out[4]: ins 0x40 res 0
+Out[5]: ins 0xE0 res 2
+We got an output! out: 2
+Out[6]: ins 0x61 res 0
+Out[1]: ins 0x 0 res 0
+```
+> Debug the trace file by running `gtkwave`
+```
+gtkwave build/loop.vcd
+```
+![alt text](examples/loop.png "Title")
+
 # ISA
 |INS|Desciption|Op Code|Mem Address|
 |-|-|-|-|

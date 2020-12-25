@@ -48,6 +48,7 @@ build-cpu:
 
 all: compile-verilog verilate build-cpu
 
+# Programs
 examples/loop:
 	mkdir -p ${BIN_DIR}
 	python3 tools/compiler.py \
