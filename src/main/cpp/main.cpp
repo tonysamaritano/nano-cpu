@@ -1,11 +1,14 @@
 #include <cstdio>
 #include <cstdint>
+#include <csignal>
 #include <vector>
 #include <unistd.h>
 
 #include <string>
 
 #include "verilated.h"
+#include "verilated_vcd_c.h"
+
 #include "VCPU.h"
 
 std::vector<uint8_t> defaultProgram = {
@@ -21,15 +24,26 @@ std::vector<uint8_t> defaultProgram = {
     0b11110000, // HLT          // Halt processor
 };
 
-void step(VCPU *cpu, int steps);
+static bool end = false;
+
+void step(VCPU *cpu, VerilatedVcdC *trace, int steps, int &time);
+
+void signal_callback_handler(int signum)
+{
+    printf("Exiting! %i\n", signum);
+    end = true;
+}
 
 int main(int argc, char** argv, char** env) {
     Verilated::commandArgs(argc, argv);
 
+    VerilatedVcdC *tc = nullptr;
+    signal(SIGINT, signal_callback_handler);
+
     char c;
     int verbosity = 0;
-    std::string bin;
-    while ((c = getopt (argc, argv, "vb:")) != -1)
+    std::string bin, tracefile;
+    while ((c = getopt (argc, argv, "vb:t:")) != -1)
     {
         switch (c)
         {
@@ -38,6 +52,9 @@ int main(int argc, char** argv, char** env) {
             break;
         case 'b':
             bin = std::string(optarg);
+            break;
+        case 't':
+            tracefile = std::string(optarg);
             break;
         default:
             break;
@@ -66,25 +83,34 @@ int main(int argc, char** argv, char** env) {
     /* Initialize the top level CPU */
     VCPU* top = new VCPU;
 
+    if (!tracefile.empty())
+    {
+        Verilated::traceEverOn(true);
+        tc = new VerilatedVcdC;
+        top->trace(tc, 99); // Trace 99 levels of hierarchy
+        tc->open(tracefile.c_str());
+    }
+
     /* Prepare cpu for instruction load */
     top->io_halt = 0;
     top->io_load = 1;
 
     /* Load in program into instruction cache */
+    int time_ns = 0;
     int count = 0;
     for (auto ins : program) {
         top->io_addr = count++; /* Instruction address */
         top->io_data = ins; /* Instruction */
 
         /* Cycle the clock */
-        step(top, 1);
+        step(top, tc, 1, time_ns);
     }
     top->io_load = 0;
 
     /* Run the program */
-    while (!top->io_halt) {
+    while (!top->io_halt && !end) {
         /* Cycle the clock */
-        step(top, 1);
+        step(top, tc, 1, time_ns);
 
         /* Print CPU states */
         if (verbosity > 0)
@@ -102,10 +128,13 @@ int main(int argc, char** argv, char** env) {
         }
     }
     delete top;
+    if (tc) tc->close();
+    if (tc) delete tc;
+
     exit(0);
 }
 
-void step(VCPU *cpu, int steps)
+void step(VCPU *cpu, VerilatedVcdC *trace, int steps, int &time)
 {
     for (int i=0; i < steps; i++)
     {
@@ -113,8 +142,12 @@ void step(VCPU *cpu, int steps)
         cpu->clock = 1;
         cpu->eval();
 
+        if (trace) trace->dump(time++);
+
         /* Simulate Falling Edge */
         cpu->clock = 0;
         cpu->eval();
+
+        if (trace) trace->dump(time++);
     }
 }

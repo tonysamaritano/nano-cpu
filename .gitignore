@@ -67,6 +67,8 @@ obj_dir/
 bin/
 tmp/
 *.tmp
+*.vcd
+*.bin
 *.bak
 *.swp
 *~.nib
