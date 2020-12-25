@@ -1,4 +1,11 @@
 import sys
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--asm', help='assembly file')
+parser.add_argument('--bin', help='output bin file')
+
+args = parser.parse_args()
 
 class Ins():
     ins = {
@@ -32,8 +39,8 @@ class Ins():
     def __str__(self):
         return str(self._operation)
 
-asm = open(sys.argv[1], "r")
-output = open(f"{sys.argv[1]}.bin", "wb")
+asm = open(args.asm, "r")
+output = open(f"{args.bin}", "wb")
 
 for line in asm:
     # Strip Comments

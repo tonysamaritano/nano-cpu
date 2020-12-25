@@ -1,11 +1,21 @@
 TOP=VCPU
 SRC=CPU.v
-BIN_DIR=obj_dir
+BIN_DIR=build
+JAVA_DIR=target
 
 default: all
 
 clean:
-	rm -r ${BIN_DIR}
+	# Removes build dir and whatever the 'target' directory that
+	# scala makes. I don't know what that directory is or why I
+	# can't control where it is put
+	rm -r ${BIN_DIR} ${JAVA_DIR}
+
+	# Scala also builds folders in the project folder that I don't
+	# understand. There are other files in the project folder that
+	# seem important though
+	rm -r project/project
+	rm -r project/target
 
 compile-verilog:
 	mkdir -p ${BIN_DIR}
@@ -13,14 +23,21 @@ compile-verilog:
 
 verilate:
 	# Verilator creates cpp code out of verilog files
-	verilator --cc ${BIN_DIR}/${SRC} --exe src/main/cpp/main.cpp --trace
+	verilator \
+		--cc ${BIN_DIR}/${SRC} \
+		--exe src/main/cpp/main.cpp \
+		--trace \
+		--Mdir ${BIN_DIR}
 
 	# Compiles generated cpp into library
 	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk ${TOP}__ALL.a
 
 build-cpu:
 	# Compiles wrapper for simulator
-	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk main.o verilated.o verilated_vcd_c.o
+	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk \
+		main.o \
+		verilated.o \
+		verilated_vcd_c.o
 
 	# Builds Simulation Application
 	g++ ${BIN_DIR}/main.o \
@@ -30,3 +47,9 @@ build-cpu:
 		-o ${BIN_DIR}/${TOP}
 
 all: compile-verilog verilate build-cpu
+
+examples/loop:
+	mkdir -p ${BIN_DIR}
+	python3 tools/compiler.py \
+		--asm examples/loop.asm \
+		--bin ${BIN_DIR}/loop.bin
