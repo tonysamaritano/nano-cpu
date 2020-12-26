@@ -14,148 +14,34 @@ import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
   * }}}
   */
 object main extends App {
-  // val testResult = Driver(() => new PassthroughGenerator(8)) {
-  //   c => new PeekPokeTester(c) {
-  //     for (i <- 0 until 100) {
-  //       poke(c.io.in, i)     // Set our input to value 0
-  //       expect(c.io.out, i)  // Assert that the output correctly has 0
-  //     }
-  //     println(s"Print during testing: Input is ${peek(c.io.out)}")
-  //   }
-  // }
-  // assert(testResult)   // Scala Code: if testResult == false, will throw an error
-  // println("SUCCESS!!")
-
-  // val counterResult = Driver(() => new Counter(8)) {
-  //   c => new PeekPokeTester(c) {
-
-  //     // Set Vlaue in counter to 33
-  //     val offset = 33;
-  //     poke(c.io.en, 0)
-  //     poke(c.io.set, 1)
-  //     poke(c.io.in, offset)
-  //     step(1)
-
-  //     for (i <- 0 until 100)
-  //     {
-  //       poke(c.io.in, 0)
-  //       poke(c.io.set, 0)
-  //       poke(c.io.en, 1)
-  //       expect(c.io.out, i+offset)
-  //       // println(s"Print during testing: Output is ${peek(c.io.out)}")
-  //       step(1)
-  //     }
-  //   }
-  // }
-
-  // /* Prints module to string */
-  // // val verilogString = (new chisel3.stage.ChiselStage).emitVerilog(new Counter(8))
-  // // println(verilogString)
-
-  // val registerResult = Driver(() => new Register(8)) {
-  //   c => new PeekPokeTester(c) {
-  //     poke(c.io.en, 1)
-  //     poke(c.io.in, 0)
-  //     step(1)
-
-  //     for (i <- 1 until 100)
-  //     {
-  //       poke(c.io.en, i % 2 == 0)
-  //       poke(c.io.in, i)
-  //       step(1)
-  //       if (i % 2 == 0) {
-  //         expect(c.io.out, i)
-  //       } else {
-  //         expect(c.io.out, i-1)
-  //       }
-  //     }
-
-
-  //     poke(c.io.en, 1)
-  //     for (i <- 0 until 255)
-  //     {
-  //       poke(c.io.in, i)
-  //       step(1)
-  //       expect(c.io.out, i)
-  //     }
-  //   }
-  // }
-
-  // // val memResult = Driver(() => new Memory(8, 256)) {
-  // //   c => new PeekPokeTester(c) {
-  // //     for (i <- 0 until 100) {
-  // //       poke(c.io.write, true)
-  // //       poke(c.io.addr, i)
-  // //       poke(c.io.dataIn, i)
-  // //       expect(c.io.data, i)
-  // //       // println(s"${peek(c.io.addr)} Din: ${peek(c.io.dataIn)} Dout is ${peek(c.io.data)}")
-  // //       step(1)
-  // //     }
-
-  // //     for (i <- 0 until 100) {
-  // //       poke(c.io.write, false)
-  // //       poke(c.io.addr, i)
-  // //       poke(c.io.dataIn, i+25)
-  // //       expect(c.io.data, i)
-  // //       // println(s"${peek(c.io.addr)} Din: ${peek(c.io.dataIn)} Dout is ${peek(c.io.data)}")
-  // //       step(1)
-  // //     }
-  // //   }
-  // // }
-
-  // val programMem = Driver(() => new ProgramMemory(8, 256)) {
-  //   c => new PeekPokeTester(c) {
-  //     for (i <- 0 until 5) {
-  //       poke(c.io.addr, i)
-  //       expect(c.io.data, ProgramMemory.program(i))
-  //       println(s"${peek(c.io.addr)}: ${peek(c.io.data)}")
-  //       step(1)
-  //     }
-  //   }
-  // }
-
-  // val insDecoderTest = Driver(() => new InsDecoder(4, 4)) {
-  //   c => new PeekPokeTester(c) {
-  //     for (i <- 0 until ProgramMemory.program.length) {
-  //       poke(c.io.ins, ProgramMemory.program(i))
-  //       println(s"Opcode: ${peek(c.io.opcode)} Data: ${peek(c.io.data)}")
-  //       step(1)
-  //     }
-  //   }
-  // }
-
-  // val fetchStageTest = Driver(() => new FetchStage(8)) {
-  //   c => new PeekPokeTester(c) {
-  //     for (i <- 0 until 10) {
-  //       /* Load every other ins */
-  //       poke(c.io.halt, i%2==0)
-  //       // expect(c.io.data, ProgramMemory.program(i/2))
-  //       println(s"Ins: ${peek(c.io.data)} Opcode: ${peek(c.io.opcode)}")
-  //       step(1)
-  //     }
-  //   }
-  // }
-
-  val cpuTest = Driver(() => new CPU(8, false)) {
+  val testResult = Driver(() => new PassthroughGenerator(8)) {
     c => new PeekPokeTester(c) {
-      poke(c.io.halt, false.B)
-      poke(c.io.load, true.B)
-
-      for (i <- 0 until ProgramMemory.program.length) {
-        poke(c.io.data, ProgramMemory.program(i))
-        poke(c.io.addr, i)
-        step(1)
-      }
-      poke(c.io.load, false.B)
-
-      for (i <- 0 until ProgramMemory.program.length) {
-        println(s"Result: ${peek(c.io.output)}")
-        step(1)
+      for (i <- 0 until 100) {
+        poke(c.io.in, i)     // Set our input to value 0
+        expect(c.io.out, i)  // Assert that the output correctly has 0
+        // println(s"Print during testing: Input is ${peek(c.io.out)}")
       }
     }
   }
+  assert(testResult)   // Scala Code: if testResult == false, will throw an error
 
-  /* Prints module to string */
-  // val verilogString = (new chisel3.stage.ChiselStage).emitVerilog(new CPU(8))
-  // println(verilogString)
+  val insResult = Driver(() => new ControlSignals(8)) {
+    c => new PeekPokeTester(c) {
+      val invalid_ins = "b_1110_1101".U
+
+      val add = "b_0000_0111".U
+      val sub = "b_0000_1101".U
+
+      /* Test ALU */
+      poke(c.io.ins, add)
+      expect(c.io.add, Control.ALU_ADD)
+      poke(c.io.ins, sub)
+      expect(c.io.add, Control.ALU_SUB)
+      poke(c.io.ins, invalid_ins)
+      expect(c.io.add, Control.ALU_XXX)
+    }
+  }
+  assert(insResult)
+
+  println("SUCCESS!!")
 }

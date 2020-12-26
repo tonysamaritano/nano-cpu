@@ -58,7 +58,7 @@ gtkwave build/loop.vcd
 ```
 ![alt text](examples/loop.png "Title")
 
-# ISA
+# ISA 1.0 (Ben Eater)
 |INS|Desciption|Op Code|Mem Address|
 |-|-|-|-|
 |NOP|No Operation|0b0000|0bXXXX|
@@ -73,94 +73,51 @@ gtkwave build/loop.vcd
 |OUT|Displays contents of A register|0b1110|0bXXXX|
 |HLT|Halts processor|0b1111|0bXXXX|
 
-## Example
-```
-STORE_A=0xe
-STORE_B=0xf
+# ISA 2.0
+|INS|Desciption|Op Code|Mem Address|
+|-|-|-|-|
+|ADD|Add A and B register, store in A|0b0000|0b0XXX|
+|SUB|Subtract A and B register, store in A|0b0000|0b1XXX|
+|LDA|Load from address into A register|0b0001|4-bit address lower|
+|LDAH|Load from address into A register|0b0010|4-bit address upper|
+|LDB|Load from address into B register|0b0011|4-bit address lower|
+|LDBH|Load from address into B register|0b0100|4-bit address upper|
+|LDI|Load immediate into A register|0b0101|4-bit value lower|
+|LDIH|Load from immediate into A register|0b0110|4-bit value upper|
+|STA|Store contents in A to address stored in B|0b0111|0bXXXX|
+|JMP|Jump to address in A register|0b1000|0bXXXX|
+|JSR|Jump to Subroutine at address in A register|0b1001|0b0XXX|
+|RSR|Return from Subroutine at address in A register|0b1001|0b1XXX|
+|BZ|Branch to relative, unsigned address if result of reg A and reg B is zero|0b1010|4-bit unsigned relative address|
+|CLR|Clear processor flags|0b1011|0b0XXX|
+|FLG|Copy processor flags to reg A|0b1011|0b1XXX|
+|HLT|Halts processor|0b1111|0bXXXX|
 
-store_21a:
-  LDI #0x6     // Load 6
-  STA $STORE_A // Put 6 into STORE_A address
-  LDI #0xf     // Load 15
-  ADD $0xf     // Add address STORE_A to reg A
-  STA $STORE_A // Store 21 into STORE_A address
+## Arithmatic Operations
+`ADD`, `SUB`: Add or subtract signed integers
 
-store_21b:
-  LDI #0x6     // Load 6
-  STA $STORE_B // Put 6 into STORE_B address
-  LDI #0xf     // Load 15
-  ADD $0xf     // Add address STORE_B to reg A
-  STA $STORE_B // Store 21 into STORE_B address
+## Load/Store
+`LDI`, `LDIH`: Load immediate into register A
 
-add_42:
-  LDA $STORE_A // Load contents of STORE_A into reg A
-  ADD $STORE_B // Puts STORE_B in reg B then adds reg B and reg A
-  OUT          // Outputs the contents of reg A
-```
+`LDA`, `LDAH`: Load from address into register A
 
-# Components
-> Clock and reset are a part of every component
-## Instruction Register
-|Input|Ouput|
-|-|-|
-|Instruction from Memory (8-bit)|Op Code (4-bit)|
-||Address/Imm Out (4-bit)|
-## Program Counter
-|Input|Ouput|
-|-|-|
-|Enable (1-bit)|Address (8-bit)|
-|Address (8-bit)||
-|Set (1-bit)||
-## Memory
-|Input|Output|
-|-|-|
-|Address (8-bit)|Data (8-bit)|
-|Data (8-bit)||
-|Write Enable (1-bit)||
-|Read Enable (1-bit)||
-## ALU
-|Input|Output|
-|-|-|
-|Input A (8-bit)|Output (8-bit)|
-|Input B (8-bit)|Carry (1-bit)|
-|Signed (1-bit)|Zero (1-bit)|
-## Registers
-|Input|Output|
-|-|-|
-|Data (8-bit)|Data (8-bit)|
-|Write Enable (1-bit)||
-## Controller
+`LDB`, `LDBH`: Load from address into register B
 
-# Stages
-## Stage 1 - Fetch
-Gets the next instruction
+`STA`: Store register A into address at register B
 
-## Stage 2 - Execute
-### NOP
-Do Nothing
+## Branch/Jmp
+`JMP`: unconditional jump to address loaded in register A
 
-### LDA
-Access memory at address and place it into register A
+`JSR`: jump to subroutine at address loaded in register A
 
-### ADD
-Add register A and register B and then store in register A
+`RSR`: return from subroutine
 
-### SUB
+`BZ`: branch to an address relative to the current PC
 
-### STA
-Store register A at address
+## CSR
+`CLR`: clear processor flags
 
-### LDI
-Put immediate into register A
+`FLG`: copy processor flags into reg A
 
-### JMP
-Load value into program counter
-
-### JC
-
-### JZ
-
-### OUT
-
-### HLT
+`HLT`: halt the processor
 
