@@ -3,8 +3,8 @@
 package cpu
 
 import chisel3._
-import chisel3.util._
-import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
+import chisel3.tester._
+import chisel3.tester.RawTester.test
 
 /**
   * This provides an alternate way to run tests, by executing then as a main
@@ -14,104 +14,90 @@ import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
   * }}}
   */
 object main extends App {
-  val testResult = Driver(() => new PassthroughGenerator(8)) {
-    c => new PeekPokeTester(c) {
-      for (i <- 0 until 100) {
-        poke(c.io.in, i)     // Set our input to value 0
-        expect(c.io.out, i)  // Assert that the output correctly has 0
-        // println(s"Print during testing: Input is ${peek(c.io.out)}")
-      }
+  /* New Tester Framework */
+  test(new PassthroughGenerator(8)) { c =>
+    for (i <- 0 until 100) {
+      c.io.in.poke(i.U)     // Set our input to value 0
+      c.io.out.expect(i.U)  // Assert that the output correctly has 0
+      c.clock.step(1)
+      // println(s"Print during testing: Input is ${c.io.out.peek()}")
     }
   }
-  assert(testResult)   // Scala Code: if testResult == false, will throw an error
 
-  val insResult = Driver(() => new ControlSignals(8)) {
-    c => new PeekPokeTester(c) {
-      /* Ths instruction does not exist in the ISA */
-      val invalid_ins = "b_1110_1101".U
+  val rnd = scala.util.Random;
 
-      /* Arithmetic Operations */
-      val add  = "b_0000_0011".U
-      val sub  = "b_0000_1001".U
+  /* Ths instruction does not exist in the ISA */
+  val invalid_ins = "b_1110_1101".U
 
-      /* Test ALU */
-      poke(c.io.ins, add)
-      expect(c.io.alu, Control.ALU_ADD)
-      poke(c.io.ins, sub)
-      expect(c.io.alu, Control.ALU_SUB)
-      poke(c.io.ins, invalid_ins)
-      expect(c.io.alu, Control.ALU_XXX)
-    }
+  /* Arithmetic Operations */
+  val add  = "b_0000_0011".U
+  val sub  = "b_0000_1001".U
+
+  test(new ControlSignals(8)) { c=>
+    /* Test ALU */
+    c.io.ins.poke(add)
+    c.io.alu.expect(Control.ALU_ADD)
+    c.io.ins.poke(sub)
+    c.io.alu.expect(Control.ALU_SUB)
+    c.io.ins.poke(invalid_ins)
+    c.io.alu.expect(Control.ALU_XXX)
   }
-  assert(insResult)
 
-  val aluResult = Driver(() => new TestALU(8)) {
-    c => new PeekPokeTester(c) {
-      /* Ths instruction does not exist in the ISA */
-      val invalid_ins = "b_1110_1101".U
+  test(new TestALU(8)) { c=>
+    c.io.ins.poke(add)
 
-      /* Arithmetic Operations */
-      val add  = "b_0000_0011".U
-      val sub  = "b_0000_1001".U
+    /* Test ALU Int Addition No Carry */
+    var x = rnd.nextInt(127)
+    var y = rnd.nextInt(128)
+    c.io.inA.poke(x.U)
+    c.io.inB.poke(y.U)
+    c.io.out.expect((x+y).U)
+    c.io.zero.expect(false.B)
+    c.io.carry.expect(false.B)
 
-      /* Test ALU Int Addition No Carry */
-      var x = rnd.nextInt(127)
-      var y = rnd.nextInt(128)
-      poke(c.io.ins, add)
-      poke(c.io.inA, x)
-      poke(c.io.inB, y)
-      expect(c.io.out, x+y)
-      expect(c.io.zero, 0)
-      expect(c.io.carry, 0)
+    /* Test ALU Int Addition Carry */
+    x = rnd.nextInt(127) + 128
+    y = rnd.nextInt(128) + 128
+    c.io.inA.poke(x.U)
+    c.io.inB.poke(y.U)
+    c.io.out.expect((x+y-256).U)
+    c.io.zero.expect(false.B)
+    c.io.carry.expect(true.B)
 
-      /* Test ALU Int Addition Zero */
-      poke(c.io.ins, add)
-      poke(c.io.inA, 0)
-      poke(c.io.inB, 0)
-      expect(c.io.out, 0)
-      expect(c.io.zero, 1)
-      expect(c.io.carry, 0)
+    /* Test ALU Int Addition Zero */
+    c.io.inA.poke(0.U)
+    c.io.inB.poke(0.U)
+    c.io.out.expect(0.U)
+    c.io.zero.expect(true.B)
+    c.io.carry.expect(false.B)
 
-      /* Test ALU Int Addition Carry */
-      x = rnd.nextInt(127) + 128
-      y = rnd.nextInt(128) + 127
-      poke(c.io.ins, add)
-      poke(c.io.inA, x)
-      poke(c.io.inB, y)
-      expect(c.io.out, x+y - 256)
-      expect(c.io.zero, 0)
-      expect(c.io.carry, 1)
+    c.io.ins.poke(sub)
 
-      /* Test ALU Int Subtraction */
-      x = 255
-      y = rnd.nextInt(254)
-      poke(c.io.ins, sub)
-      poke(c.io.inA, x)
-      poke(c.io.inB, y)
-      expect(c.io.out, x-y)
-      expect(c.io.zero, 0)
-      expect(c.io.carry, 0)
+    /* Test ALU Int Subtraction No Carry */
+    x = 128
+    y = rnd.nextInt(127)
+    c.io.inA.poke(x.U)
+    c.io.inB.poke(y.U)
+    c.io.out.expect((x-y).U)
+    c.io.zero.expect(false.B)
+    c.io.carry.expect(false.B)
 
-      /* Test ALU Int Subtraction Zero */
-      poke(c.io.ins, sub)
-      poke(c.io.inA, 1)
-      poke(c.io.inB, 1)
-      expect(c.io.out, 0)
-      expect(c.io.zero, 1)
-      expect(c.io.carry, 0)
+    /* Sub Zero */
+    c.io.inA.poke(1.U)
+    c.io.inB.poke(1.U)
+    c.io.out.expect(0.U)
+    c.io.zero.expect(true.B)
+    c.io.carry.expect(false.B)
 
-      /* Test ALU Int Subtraction Borrow */
-      x = 0
-      y = rnd.nextInt(254) + 1
-      poke(c.io.ins, sub)
-      poke(c.io.inA, x)
-      poke(c.io.inB, y)
-      expect(c.io.out, x-y + 256)
-      expect(c.io.zero, 0)
-      expect(c.io.carry, 1)
-    }
+    /* Sub Borrow */
+    x = 0
+    y = rnd.nextInt(255) + 1
+    c.io.inA.poke(x.U)
+    c.io.inB.poke(y.U)
+    c.io.out.expect((x-y+256).U)
+    c.io.zero.expect(false.B)
+    c.io.carry.expect(true.B)
   }
-  assert(aluResult)
 
   println("SUCCESS!!")
 }
