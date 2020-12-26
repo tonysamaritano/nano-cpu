@@ -1,10 +1,7 @@
 # Chisel Project Template
-8-bit CPU based on the Ben Eater ISA
+8-bit von Neumann CPU inspired by the Ben Eater ISA. The point of this project is to create an 8-bit computer for learning how to build a computer from scratch based on my current understanding of computer architecture.
 
-# Intro
-An 8-bit computer for learning how to build a computer from scratch.
-
-# How to build
+# How to build (__deprecated__)
 In order to build the CPU and simulate it, run the following commands:
 ```
 # Builds all required source into a build/ folder to run the CPU
@@ -59,6 +56,7 @@ gtkwave build/loop.vcd
 ![alt text](examples/loop.png "Title")
 
 # ISA 1.0 (Ben Eater)
+
 |INS|Desciption|Op Code|Mem Address|
 |-|-|-|-|
 |NOP|No Operation|0b0000|0bXXXX|
@@ -74,6 +72,7 @@ gtkwave build/loop.vcd
 |HLT|Halts processor|0b1111|0bXXXX|
 
 # ISA 2.0
+
 |INS|Desciption|Op Code|Mem Address|
 |-|-|-|-|
 |ADD|Add A and B register, store in A|0b0000|0b0XXX|
@@ -121,3 +120,12 @@ gtkwave build/loop.vcd
 
 `HLT`: halt the processor
 
+# Components
+# ALU
+The ALU needs to take in two inputs (A and B registers) and multiplex control inputs. The ALU will be able to add or subtract either signed or unsigned integers. The ALU will output the result, a bit for carry, and a bit for zero.
+
+|Requirement|Desciption|Complete|
+|-|-|-|
+|Unsigned Addition|The ALU shall implement unsigned addition|Complete|
+|Zero Result Bit|The ALU shall output a zero bit from the result if the result of the addition or subtraction is 0|Complete|
+|Carry Result Bit|The ALU shall output a carry/borrow bit if there was an overflow as a result of the operation|Complete|

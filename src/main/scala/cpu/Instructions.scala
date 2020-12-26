@@ -5,8 +5,8 @@ import chisel3.util.BitPat
 
 object Instructions {
     /* Arithmetic Operations */
-    def ADD = BitPat("b_0000_0???")
-    def SUB = BitPat("b_0000_1???")
+    def ADD  = BitPat("b_0000_0???")
+    def SUB  = BitPat("b_0000_1???")
 
     /* Load/Store */
     def LDA  = BitPat("b_0001_????")
