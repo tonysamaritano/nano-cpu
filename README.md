@@ -121,7 +121,7 @@ gtkwave build/loop.vcd
 `HLT`: halt the processor
 
 # Components
-# ALU
+## ALU
 The ALU needs to take in two inputs (A and B registers) and multiplex control inputs. The ALU will be able to add or subtract either signed or unsigned integers. The ALU will output the result, a bit for carry, and a bit for zero.
 
 |Requirement|Desciption|Complete|
@@ -129,3 +129,21 @@ The ALU needs to take in two inputs (A and B registers) and multiplex control in
 |Unsigned Addition|The ALU shall implement unsigned addition|Complete|
 |Zero Result Bit|The ALU shall output a zero bit from the result if the result of the addition or subtraction is 0|Complete|
 |Carry Result Bit|The ALU shall output a carry/borrow bit if there was an overflow as a result of the operation|Complete|
+
+### How it works
+Once decoded, the `ADD`, `SUB` instruction must store the result of A and B in register A.
+```
+Clock 1:
+- Put result of A and B on the bus and latch the bus to A
+- Store zero and carry flag
+```
+I think this can be done in one clock cycle.
+
+## Register File
+The register file holds the A and B registers. It must store data based on an enable and control signal. It'll always output the values in the A and B registers to the rest of the CPU
+
+|Requirement|Desciption|Complete|
+|-|-|-|
+|Store En Input|The register file shall store in either A, B, A and B, or none off of the bus|Complete|
+|Output A and B|The register file shall output the A and B registers to the CPU|Complete|
+
