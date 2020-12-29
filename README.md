@@ -92,33 +92,100 @@ gtkwave build/loop.vcd
 |FLG|Copy processor flags to reg A|0b1011|0b1XXX|
 |HLT|Halts processor|0b1111|0bXXXX|
 
-## Arithmatic Operations
-`ADD`, `SUB`: Add or subtract signed integers
+# ISA 2.1
+Its useful to break down an ISA into its component parts: arithmatic, load/store, branch, and CSR. I think the 8-bit CPU is too limiting for this project because you have no overhead to do anything significant. I think I'd rather change the architecture to a limited 16-bit architecture so that I don't need to deal with the complexities of fitting everything into such a small space.
+
+I want to put all opcodes into a 3-bit space and then the different types of can be organized accordingly.
+
+The instructions should read in destination, source order (Intel syntax).
+
+The register stucture will be simular to RISC-V with a zero register and the PC as its own register. The register map will look like this:
+
+|Register|Register Name|Desciption|
+|-|-|-|
+|x0|zero|This register is read only and only returns zero|
+|x1|ra|Return address register|
+|x2|sp|Stack pointer register|
+|x3|t0|Temporary Storage 0|
+|x4|t1|Temporary Storage 1|
+|x5|s0|Saved Register 0|
+|x6|a0|General purpose or for passing valiables into a function|
+|x7|a1|General purpose or for passing valiables into a function|
+
+|Register|Register Name|Desciption|
+|-|-|-|
+|pc|pc|Program Counter|
+
+I think this will be a nice, simple way for the processor to be mildly useful.
+
+## A-Type Operations
+Add or subtract signed integers. These operations are for arithmatic and bit manupulation operations like `ADD`, `SUB`, `AND`, `OR`, etc. operations.
+
+|Reg2(3-bit)/Imm|Reg1(3-bit)|Reg0(3-bit)|Type (4-bit)|Opcode (3-bit)|
+|-|-|-|-|-|
+|src1|src0|dst|`ADD` (`0x0`)|Arithmatic (`0x0`)|
+|imm|src0|dst|`ADDI` (`0x1`)|Arithmatic (`0x0`)|
+|src1|src0|dst|`SUB` (`0x2`)|Arithmatic (`0x0`)|
+|src1|src0|dst|`AND` (`0x3`)|Arithmatic (`0x0`)|
+|src1|src0|dst|`OR` (`0x4`)|Arithmatic (`0x0`)|
+|src1|src0|dst|`XOR` (`0x5`)|Arithmatic (`0x0`)|
+||src0|dst|`NOT` (`0x6`)|Arithmatic (`0x0`)|
+
 
 ## Load/Store
-`LDI`, `LDIH`: Load immediate into register A
+`LDI`, `LDIH`: Load immediate into destination register
 
-`LDA`, `LDAH`: Load from address into register A
+`LDB, LDW`: Load Byte from address in src register into destination register
 
-`LDB`, `LDBH`: Load from address into register B
+`STB, STW`: Store Byte (1-byte) or word (2-bytes) in register into destination address
 
-`STA`: Store register A into address at register B
+### Immediate
+|Immediate(8-bit)|Register(3-bit)|Type (2-bit)|Opcode (3-bit)|
+|-|-|-|-|-|
+|imm|dst|`LDI` (`0x0`)|LS (`0x1`)|
+|imm|dst|`LDIH` (`0x1`)|LS (`0x1`)|
+
+### Address
+|Word (1-bit)|Register(3-bit)|Register(3-bit)|Type (2-bit)|Opcode (3-bit)|
+|-|-|-|-|-|
+|`0x0`|src|dst|`LDB` (`0x2`)|LS (`0x1`)|
+|`0x1`|src|dst|`LDW` (`0x2`)|LS (`0x1`)|
+|`0x0`|src|dst|`STB` (`0x3`)|LS (`0x1`)|
+|`0x1`|src|dst|`STW` (`0x3`)|LS (`0x1`)|
+
 
 ## Branch/Jmp
-`JMP`: unconditional jump to address loaded in register A
+`JMP`: unconditional jump to address loaded in source register
 
-`JSR`: jump to subroutine at address loaded in register A
+`JSR`: jump to subroutine at address loaded in source register
 
 `RSR`: return from subroutine
 
-`BZ`: branch to an address relative to the current PC
+`BZ`: branch on zero to address in src
+
+`BC`: branch on carry to address in src
+
+|Arguments|Type (4-bit)|Opcode (3-bit)|
+-|-|-|
+|src (3-bit)|`JMP` (`0x0`)|BR (`0x2`)|
+|src (3-bit)|`JSR` (`0x1`)|BR (`0x2`)|
+||`RSR` (`0x2`)|BR (`0x2`)|
+|src (3-bit)|`BZ` (`0x3`)|BR (`0x2`)|
+
 
 ## CSR
+
 `CLR`: clear processor flags
 
-`FLG`: copy processor flags into reg A
+`FLG`: copy processor flags into dst register
 
 `HLT`: halt the processor
+
+|Arguments|Type (4-bit)|Opcode (3-bit)|
+-|-|-|
+||`CLR` (`0x0`)|CSR (`0x3`)|
+|dst (3-bit)|`FLG` (`0x1`)|CSR (`0x3`)|
+||`HLT` (`0x2`)|CSR (`0x3`)|
 
 # Components
 ## ALU

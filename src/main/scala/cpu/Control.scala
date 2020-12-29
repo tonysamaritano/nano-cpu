@@ -1,7 +1,7 @@
 package cpu
 
 import chisel3._
-import chisel3.util.ListLookup
+import chisel3.util.{ListLookup, Enum, log2Ceil}
 
 import Instructions._
 
@@ -23,37 +23,51 @@ object Control {
   val FLG_STORE_ZC = 1.U(FLG_BITWIDTH)
 
   /* Register Control */
-  def REG_BITWIDTH = 2.W
-  val REG_NONE     = 0.U(REG_BITWIDTH)
-  val REG_A        = 1.U(REG_BITWIDTH)
-  val REG_B        = 2.U(REG_BITWIDTH)
-  val REG_AB       = 3.U(REG_BITWIDTH)
+  def REG_WB_BITWIDTH = 1.W
+  val REG_WB_OFF      = 0.U(REG_WB_BITWIDTH)
+  val REG_WB_EN       = 1.U(REG_WB_BITWIDTH)
 
   /* Default Control Signal */
-  val default = List(BUS_XXX, FLG_XXX, REG_NONE, ALU_XXX)
+  val default = List(BUS_XXX, FLG_XXX, REG_WB_OFF, ALU_XXX)
 
   /* Control Signal Lookup */
+  /*             Bus Ctrl,    Flag Storage, Reg Enable,   ALU Op  */
   val map = Array(
-    ADD  -> List(BUS_ALU_OUT, FLG_STORE_ZC, REG_A, ALU_ADD),
-    SUB  -> List(BUS_ALU_OUT, FLG_STORE_ZC, REG_A, ALU_SUB)
+    ADD  -> List(BUS_ALU_OUT, FLG_STORE_ZC, REG_WB_EN, ALU_ADD),
+    SUB  -> List(BUS_ALU_OUT, FLG_STORE_ZC, REG_WB_EN, ALU_SUB)
   )
 }
 
 class ControlSignals(width: Int) extends Module {
   val io = IO(new Bundle {
-    val ins = Input(UInt(width.W))
-    val bus = Output(UInt(Control.BUS_BITWIDTH))
-    val flg = Output(UInt(Control.FLG_BITWIDTH))
-    val reg = Output(UInt(Control.REG_BITWIDTH))
-    val alu = Output(UInt(Control.ALU_BITWIDTH))
+    val ins  = Input(UInt(width.W))
+    val bus  = Output(UInt(Control.BUS_BITWIDTH))
+    val flg  = Output(UInt(Control.FLG_BITWIDTH))
+    val alu  = Output(UInt(Control.ALU_BITWIDTH))
+    val reg  = Output(UInt(Control.REG_WB_BITWIDTH))
+    val dst  = Output(UInt(log2Ceil(REGFILE_SIZE).W))
+    val src0 = Output(UInt(log2Ceil(REGFILE_SIZE).W))
+    val src1 = Output(UInt(log2Ceil(REGFILE_SIZE).W))
   })
 
   /* Decode Instruction and Lookup Control Signals */
   val ctrlSignals = ListLookup(io.ins, Control.default, Control.map)
+  val opcode = io.ins(2,0)
+
+  /* Wire registers up */
+  when (opcode===0.U) {
+    io.dst  := io.ins(9, 7)
+    io.src0 := io.ins(12, 10)
+    io.src1 := io.ins(15, 13)
+  }.otherwise {
+    io.dst  := 0.U
+    io.src0 := 0.U
+    io.src1 := 0.U
+  }
 
   /* Wire Control Signal Outputs */
-  io.bus := ctrlSignals(0) /* Bus Control */
-  io.flg := ctrlSignals(1) /* Flag Control */
-  io.reg := ctrlSignals(2) /* Register Control */
-  io.alu := ctrlSignals(3) /* ALU Control Signals */
+  io.bus  := ctrlSignals(0) /* Bus Control */
+  io.flg  := ctrlSignals(1) /* Flag Control */
+  io.reg  := ctrlSignals(2) /* Register Enable */
+  io.alu  := ctrlSignals(3) /* ALU Control Signals */
 }
