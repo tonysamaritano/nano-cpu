@@ -27,14 +27,22 @@ object Control {
   val REG_WB_OFF      = 0.U(REG_WB_BITWIDTH)
   val REG_WB_EN       = 1.U(REG_WB_BITWIDTH)
 
+  /* Imm Control */
+  def IMM_BITWIDTH = 2.W
+  val IMM_XXX      = 0.U(IMM_BITWIDTH)
+  val IMM_3BR2     = 1.U(IMM_BITWIDTH)
+  val IMM_8BR2     = 2.U(IMM_BITWIDTH)
+
   /* Default Control Signal */
-  val default = List(BUS_XXX, FLG_XXX, REG_WB_OFF, ALU_XXX)
+  val default = List(BUS_XXX, FLG_XXX, REG_WB_OFF, ALU_XXX, IMM_XXX)
 
   /* Control Signal Lookup */
-  /*             Bus Ctrl,    Flag Storage, Reg Enable,   ALU Op  */
+  /*               Bus Ctrl,    Flag Storage, Reg Enable, ALU Op,  Imm Gen */
   val map = Array(
-    ADD  -> List(BUS_ALU_OUT, FLG_STORE_ZC, REG_WB_EN, ALU_ADD),
-    SUB  -> List(BUS_ALU_OUT, FLG_STORE_ZC, REG_WB_EN, ALU_SUB)
+    ADD  -> List(  BUS_ALU_OUT, FLG_STORE_ZC, REG_WB_EN,  ALU_ADD, IMM_XXX),
+    ADDI -> List(  BUS_ALU_OUT, FLG_STORE_ZC, REG_WB_EN,  ALU_ADD, IMM_3BR2),
+    SUB  -> List(  BUS_ALU_OUT, FLG_STORE_ZC, REG_WB_EN,  ALU_SUB, IMM_XXX),
+    LDI  -> List(  BUS_XXX,     FLG_XXX,      REG_WB_EN,  ALU_XXX, IMM_8BR2),
   )
 }
 
@@ -45,6 +53,7 @@ class ControlSignals(width: Int) extends Module {
     val flg  = Output(UInt(Control.FLG_BITWIDTH))
     val alu  = Output(UInt(Control.ALU_BITWIDTH))
     val reg  = Output(UInt(Control.REG_WB_BITWIDTH))
+    val imm  = Output(UInt(Control.IMM_BITWIDTH))
     val dst  = Output(UInt(log2Ceil(REGFILE_SIZE).W))
     val src0 = Output(UInt(log2Ceil(REGFILE_SIZE).W))
     val src1 = Output(UInt(log2Ceil(REGFILE_SIZE).W))
@@ -70,4 +79,5 @@ class ControlSignals(width: Int) extends Module {
   io.flg  := ctrlSignals(1) /* Flag Control */
   io.reg  := ctrlSignals(2) /* Register Enable */
   io.alu  := ctrlSignals(3) /* ALU Control Signals */
+  io.imm  := ctrlSignals(4) /* Imm Gen Signal */
 }

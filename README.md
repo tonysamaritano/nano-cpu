@@ -141,7 +141,7 @@ Add or subtract signed integers. These operations are for arithmatic and bit man
 
 ### Immediate
 |Immediate(8-bit)|Register(3-bit)|Type (2-bit)|Opcode (3-bit)|
-|-|-|-|-|-|
+|-|-|-|-|
 |imm|dst|`LDI` (`0x0`)|LS (`0x1`)|
 |imm|dst|`LDIH` (`0x1`)|LS (`0x1`)|
 
@@ -213,4 +213,13 @@ The register file holds the A and B registers. It must store data based on an en
 |-|-|-|
 |Store En Input|The register file shall store in either A, B, A and B, or none off of the bus|Complete|
 |Output A and B|The register file shall output the A and B registers to the CPU|Complete|
+
+## Immediate Generation
+The immediate generation module inputs an instruction and converts the instruction into immediate values.
+
+|Requirement|Desciption|Complete|
+|-|-|-|
+|Instruction|The immediate generation shall use the instruction to generate the desired value|Complete|
+|Input ctl|The immediate generation shall select its generation output from the controller module|Complete|
+|Output Full Width Imm|The immediate generation shall output full width words based on input generation|Complete|
 

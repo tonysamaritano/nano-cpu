@@ -35,4 +35,5 @@ object Instructions {
 
     /* Parameters */
     def REGFILE_SIZE     = 8
+    def INS_SIZE         = 16
 }

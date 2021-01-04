@@ -12,13 +12,26 @@ class TestIntegration(width: Int, registers: Int) extends Module {
     val out   = Output(UInt(width.W))
   })
 
-  /* Control Module */
+  /* Modules */
   val control = Module(new ControlSignals(width))
-  val alu = Module(new ALU(width))
-  val regs = Module(new RegisterFile(registers, width))
+  val alu     = Module(new ALU(width))
+  val regs    = Module(new RegisterFile(registers, width))
+  val immgen  = Module(new ImmGen(width))
 
   /* Decode Instruction */
   control.io.ins := io.ins
+
+  /* Immidiate Generation */
+  immgen.io.ins := io.ins
+  immgen.io.ctr := control.io.imm
+
+  /* ALU Input Selection */
+  val src1Sel = Wire(UInt(width.W))
+  when (control.io.imm === Control.IMM_XXX) {
+    src1Sel := regs.io.out1
+  }.otherwise {
+    src1Sel := immgen.io.imm
+  }
 
   when (io.we) {
     /* This is just for initialization of the registers */
@@ -39,7 +52,7 @@ class TestIntegration(width: Int, registers: Int) extends Module {
   /* Connect Control Signals and Inputs */
   alu.io.ctr := control.io.alu
   alu.io.inA := regs.io.out0
-  alu.io.inB := regs.io.out1
+  alu.io.inB := src1Sel
 
   /* Temp */
   io.out := alu.io.out

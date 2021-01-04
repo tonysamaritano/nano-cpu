@@ -22,7 +22,9 @@ object main extends App {
 
   /* Arithmetic Operations */
   val add  = "b_1111_1001_1000_0000".U /* Adds contents of x6 and x7 into x3 */
+  val addi = "b_1101_1001_1000_1000".U /* Adds contents of x6 and immidiate (6) */
   val sub  = "b_1101_1101_1001_0000".U /* Subtracts contents of x7 and x6 into x3 */
+  val ldi  = "b_1010_0101_0010_0001".U /* Loads 0xa5 into register x1 */
 
   /* Tests */
   test(new PassthroughGenerator(8)) { c =>
@@ -215,6 +217,26 @@ object main extends App {
     c.io.ins.poke(ins.U)
     c.clock.step(1)
     c.io.out.expect(1.U) // x3 = 1
+
+    /* Verify that the addition instruction works */
+    c.io.ins.poke(addi)
+    c.clock.step(1)
+    c.io.out.expect(12.U) // x6 + 7 = 13
+
+    /* Check that it was written back */
+    c.io.ins.poke(ins.U)
+    c.clock.step(1)
+    c.io.out.expect(12.U) // x3 = 13
+  }
+
+  test(new ImmGen(archWidth)) { c =>
+    c.io.ins.poke(addi)
+    c.io.ctr.poke(Control.IMM_3BR2)
+    c.io.imm.expect(6.U(archWidth.W))
+
+    c.io.ins.poke(ldi)
+    c.io.ctr.poke(Control.IMM_8BR2)
+    c.io.imm.expect("h_a5".U(archWidth.W))
   }
 
   println("SUCCESS!!")
