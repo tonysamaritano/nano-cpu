@@ -115,81 +115,64 @@ The register stucture will be simular to RISC-V with a zero register and the PC 
 |Register|Register Name|Desciption|
 |-|-|-|
 |pc|pc|Program Counter|
+|fl|Flags|Flags Register|
 
 I think this will be a nice, simple way for the processor to be mildly useful.
 
-## A-Type Operations
-Add or subtract signed integers. These operations are for arithmatic and bit manupulation operations like `ADD`, `SUB`, `AND`, `OR`, etc. operations.
+## ISA Overview
+|Instruction|Type|funct3 (3b)|src1 (3b)|func1 (1b)|src0 (3b)|dst (3b)|Opcode (3b)|
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+|ADD|R|`0x0`|src1|`N/A`|src0|dst|`0x0`|
+|ADDI|I|`0x1`|imm[`3:1`]|imm[`0`]|src0|dst|`0x0`|
+|SUB|R|`0x2`|src1|`N/A`|src0|dst|`0x0`|
+|AND|R|`0x0`|src1|`N/A`|src0|dst|`0x1`|
+|OR|R|`0x1`|src1|`N/A`|src0|dst|`0x1`|
+|XOR|R|`0x2`|src1|`N/A`|src0|dst|`0x1`|
+|NOT|R|`0x3`|`N/A`|`N/A`|src0|dst|`0x1`|
+|SLL|R|`0x4`|`N/A`|`N/A`|src0|dst|`0x1`|
+|SLLI|I|`0x5`|imm[`3:1`]|imm[`0`]|src0|dst|`0x1`|
+|SRL|R|`0x6`|`N/A`|`N/A`|src0|dst|`0x1`|
+|SRLI|I|`0x7`|imm[`3:1`]|imm[`0`]|src0|dst|`0x1`|
+|LB|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
+|LW|I|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
+|LLI|U|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
+|LUAI|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
+|SPC|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x3`|
+|SB|S|imm[`4`], `0x1`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
+|SW|S|imm[`4`], `0x2`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
+|EQ|R|`0x0`|src1|`N/A`|src0|dst|`0x4`|
+|NEQ|R|`0x1`|src1|`N/A`|src0|dst|`0x4`|
+|GE|R|`0x2`|src1|`N/A`|src0|dst|`0x4`|
+|GEU|R|`0x3`|src1|`N/A`|src0|dst|`0x4`|
+|LT|R|`0x4`|src1|`N/A`|src0|dst|`0x4`|
+|LTU|R|`0x5`|src1|`N/A`|src0|dst|`0x4`|
+|JALR|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x5`|
+|JAL|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x5`|
+|BFEQ|U|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
+|BFNE|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
+|BFGE|U|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
+|BFLT|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
+|CLR|R|`0x0`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
+|FLG|R|`0x1`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
+|HLT|R|`0x7`|`N/A`|`N/A`|`N/A`|`N/A`|`0x7`|
 
-|Reg2(3-bit)/Imm|Reg1(3-bit)|Reg0(3-bit)|Type (4-bit)|Opcode (3-bit)|
-|-|-|-|-|-|
-|src1|src0|dst|`ADD` (`0x0`)|Arithmatic (`0x0`)|
-|imm|src0|dst|`ADDI` (`0x1`)|Arithmatic (`0x0`)|
-|src1|src0|dst|`SUB` (`0x2`)|Arithmatic (`0x0`)|
-|src1|src0|dst|`AND` (`0x3`)|Arithmatic (`0x0`)|
-|src1|src0|dst|`OR` (`0x4`)|Arithmatic (`0x0`)|
-|src1|src0|dst|`XOR` (`0x5`)|Arithmatic (`0x0`)|
-||src0|dst|`NOT` (`0x6`)|Arithmatic (`0x0`)|
+## ISA Description
+|Instruction|Description|Example|Explaination|
+|:-:|:-|:-|:-|
+|ADD|Adds two registers|ADD x3, x4, x5|Adds contents of x4 and x5, stores in x3|
+|ADDI|Adds immediate value (4-bits) to register|ADDI x3, x4, 1|Adds 1 to x4, stores in x3|
+|SUB|Subtracts two registers|SUB x3, x4, x5|Subtracts contents of x4 and x5, stores in x3|
+|LW|Loads word from memory|LW x3, 2(x4)|Loads word from address in x4 + 2 into x3|
+> TODO: Finish ISA description
 
-
-## Load/Store
-`LDI`, `LDIH`: Load immediate into destination register
-
-`LDB, LDW`: Load Byte from address in src register into destination register
-
-`STB, STW`: Store Byte (1-byte) or word (2-bytes) in register into destination address
-
-### Immediate
-|Immediate(8-bit)|Register(3-bit)|Type (2-bit)|Opcode (3-bit)|
-|-|-|-|-|
-|imm|dst|`LDI` (`0x0`)|LS (`0x1`)|
-|imm|dst|`LDIH` (`0x1`)|LS (`0x1`)|
-
-### Address
-|Word (1-bit)|Register(3-bit)|Register(3-bit)|Type (2-bit)|Opcode (3-bit)|
-|-|-|-|-|-|
-|`0x0`|src|dst|`LDB` (`0x2`)|LS (`0x1`)|
-|`0x1`|src|dst|`LDW` (`0x2`)|LS (`0x1`)|
-|`0x0`|src|dst|`STB` (`0x3`)|LS (`0x1`)|
-|`0x1`|src|dst|`STW` (`0x3`)|LS (`0x1`)|
-
-
-## Branch/Jmp
-`JMP`: unconditional jump to address loaded in source register
-
-`JSR`: jump to subroutine at address loaded in source register
-
-`RSR`: return from subroutine
-
-`BZ`: branch on zero to address in src
-
-`BC`: branch on carry to address in src
-
-|Arguments|Type (4-bit)|Opcode (3-bit)|
--|-|-|
-|src (3-bit)|`JMP` (`0x0`)|BR (`0x2`)|
-|src (3-bit)|`JSR` (`0x1`)|BR (`0x2`)|
-||`RSR` (`0x2`)|BR (`0x2`)|
-|src (3-bit)|`BZ` (`0x3`)|BR (`0x2`)|
-
-
-## CSR
-
-`CLR`: clear processor flags
-
-`FLG`: copy processor flags into dst register
-
-`HLT`: halt the processor
-
-|Arguments|Type (4-bit)|Opcode (3-bit)|
--|-|-|
-||`CLR` (`0x0`)|CSR (`0x3`)|
-|dst (3-bit)|`FLG` (`0x1`)|CSR (`0x3`)|
-||`HLT` (`0x2`)|CSR (`0x3`)|
+## Arithmatic Operations
+Add or subtract signed integers. These operations are for arithmatic operations like `ADD`, `SUB`, `ADDI`, etc. operations.
+> TODO: Finish Documentation
 
 # Components
 ## ALU
 The ALU needs to take in two inputs (A and B registers) and multiplex control inputs. The ALU will be able to add or subtract either signed or unsigned integers. The ALU will output the result, a bit for carry, and a bit for zero.
+> TODO: Add GE, LT, EQ, NE flags
 
 |Requirement|Desciption|Complete|
 |-|-|-|
@@ -197,22 +180,11 @@ The ALU needs to take in two inputs (A and B registers) and multiplex control in
 |Zero Result Bit|The ALU shall output a zero bit from the result if the result of the addition or subtraction is 0|Complete|
 |Carry Result Bit|The ALU shall output a carry/borrow bit if there was an overflow as a result of the operation|Complete|
 
-### How it works
-Once decoded, the `ADD`, `SUB` instruction must store the result of A and B in register A.
-```
-Clock 1:
-- Put result of A and B on the bus and latch the bus to A
-- Store zero and carry flag
-```
-I think this can be done in one clock cycle.
-
 ## Register File
-The register file holds the A and B registers. It must store data based on an enable and control signal. It'll always output the values in the A and B registers to the rest of the CPU
+> TODO: DDocument Register File
 
-|Requirement|Desciption|Complete|
-|-|-|-|
-|Store En Input|The register file shall store in either A, B, A and B, or none off of the bus|Complete|
-|Output A and B|The register file shall output the A and B registers to the CPU|Complete|
+## Control Signals
+> TODO: update control signals to include the new ISA
 
 ## Immediate Generation
 The immediate generation module inputs an instruction and converts the instruction into immediate values.
