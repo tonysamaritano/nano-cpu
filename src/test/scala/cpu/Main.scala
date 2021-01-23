@@ -26,6 +26,13 @@ object main extends App {
   val sub  = "b_1101_1101_1001_0000".U /* Subtracts contents of x7 and x6 into x3 */
   val ldi  = "b_1010_0101_0010_0001".U /* Loads 0xa5 into register x1 */
 
+  /* Ins2 */
+  val add2  = "b_0000_0110_1010_0000".U /* Adds contents of x2 and x1 into x6, funct1 set to 1*/
+  val addi2 = "b_0011_1110_1000_1000".U /* Adds contents of x2 and imm (15) into x1 */
+  val lw2   = "b_1011_1110_1000_1010".U /* Loads word at imm(x2) into x1 */
+  val lli2  = "b_1101_1111_1100_1010".U /* Loads lower 8-bit imm into x1 */
+  val sw2   = "b_1100_1010_0111_1011".U /* Stores word in x1 into imm(x2) */
+
   /* Tests */
   test(new PassthroughGenerator(8)) { c =>
     for (i <- 0 until 100) {
@@ -237,6 +244,33 @@ object main extends App {
     c.io.ins.poke(ldi)
     c.io.ctr.poke(Control.IMM_8BR2)
     c.io.imm.expect("h_a5".U(archWidth.W))
+  }
+
+  test(new ImmGen2) { c =>
+    c.io.ins.poke(addi2)
+    c.io.ctr.poke(Control2.IMM_RI)
+    c.io.imm.expect("b_1111".U(Instructions2.WORD_SIZE.W))
+
+    /* Add ins is using src1 = 001 and func1 = 1, so those are Cat'ed
+     * to form 3 */
+    c.io.ins.poke(add2)
+    c.io.ctr.poke(Control2.IMM_RI)
+    c.io.imm.expect("b_0011".U(Instructions2.WORD_SIZE.W))
+
+    /* Load word uses 5 bits for the immediate */
+    c.io.ins.poke(lw2)
+    c.io.ctr.poke(Control2.IMM_I5)
+    c.io.imm.expect("b_1_1111".U(Instructions2.WORD_SIZE.W))
+
+    /* Load lower imm uses 8 bits for the immediate */
+    c.io.ins.poke(lli2)
+    c.io.ctr.poke(Control2.IMM_U)
+    c.io.imm.expect("b_1111_1111".U(Instructions2.WORD_SIZE.W))
+
+    /* Store word uses both srcX registers */
+    c.io.ins.poke(sw2)
+    c.io.ctr.poke(Control2.IMM_S)
+    c.io.imm.expect("b_1_1111".U(Instructions2.WORD_SIZE.W))
   }
 
   println("SUCCESS!!")
