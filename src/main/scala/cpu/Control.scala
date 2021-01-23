@@ -81,3 +81,35 @@ class ControlSignals(width: Int) extends Module {
   io.alu  := ctrlSignals(3) /* ALU Control Signals */
   io.imm  := ctrlSignals(4) /* Imm Gen Signal */
 }
+
+object Control2 {
+  /* Imm Control */
+  def IMM_BITWIDTH = 2.W
+  val IMM_RI      = 0.U(IMM_BITWIDTH)
+  val IMM_I5      = 1.U(IMM_BITWIDTH)
+  val IMM_U       = 2.U(IMM_BITWIDTH)
+  val IMM_S       = 3.U(IMM_BITWIDTH)
+
+  /* Default Control Signal */
+  val default = List(IMM_RI)
+
+  /* Control Signal Lookup */
+  /*               Imm Gen */
+  val map = Array(
+    Instructions2.ADD  -> List(  IMM_RI),
+    Instructions2.ADDI -> List(  IMM_RI),
+  )
+}
+
+class Controller2 extends Bundle {
+  val ins = Input(UInt(Instructions2.INS_SIZE.W))
+  val imm = Output(UInt(Control2.IMM_BITWIDTH))
+}
+
+class Controller extends Module {
+  val io = IO(new Controller2)
+
+  val ctrlSignals = ListLookup(io.ins, Control2.default, Control2.map)
+
+  io.imm := ctrlSignals(0)
+}

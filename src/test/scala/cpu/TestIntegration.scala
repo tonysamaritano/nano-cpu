@@ -57,3 +57,23 @@ class TestIntegration(width: Int, registers: Int) extends Module {
   /* Temp */
   io.out := alu.io.out
 }
+
+class CPUIO extends Bundle {
+  val ins  = Input(UInt(Instructions2.INS_SIZE.W))
+  val imm  = Output(UInt(Instructions2.WORD_SIZE.W))
+}
+
+class TestIntegration2 extends Module {
+  val io = IO(new CPUIO)
+
+  /* Modules */
+  val control = Module(new Controller)
+  val immgen  = Module(new ImmGen2)
+
+  control.io.ins := io.ins
+
+  immgen.io.ins := io.ins
+  immgen.io.ctr := control.io.imm
+
+  io.imm := immgen.io.imm
+}

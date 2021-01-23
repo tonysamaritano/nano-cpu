@@ -273,5 +273,13 @@ object main extends App {
     c.io.imm.expect("b_1_1111".U(Instructions2.WORD_SIZE.W))
   }
 
+  test(new TestIntegration2) { c =>
+    c.io.ins.poke(add2)
+    c.io.imm.expect("b_11".U(Instructions2.WORD_SIZE.W))
+
+    c.io.ins.poke(addi2)
+    c.io.imm.expect("b_1111".U(Instructions2.WORD_SIZE.W))
+  }
+
   println("SUCCESS!!")
 }
