@@ -248,37 +248,199 @@ object main extends App {
 
   test(new ImmGen2) { c =>
     c.io.ins.poke(addi2)
-    c.io.ctr.poke(Control2.IMM_RI)
+    c.io.ctl.poke(Control2.IMM_RI)
     c.io.imm.expect("b_1111".U(Instructions2.WORD_SIZE.W))
 
     /* Add ins is using src1 = 001 and func1 = 1, so those are Cat'ed
      * to form 3 */
     c.io.ins.poke(add2)
-    c.io.ctr.poke(Control2.IMM_RI)
+    c.io.ctl.poke(Control2.IMM_RI)
     c.io.imm.expect("b_0011".U(Instructions2.WORD_SIZE.W))
 
     /* Load word uses 5 bits for the immediate */
     c.io.ins.poke(lw2)
-    c.io.ctr.poke(Control2.IMM_I5)
+    c.io.ctl.poke(Control2.IMM_I5)
     c.io.imm.expect("b_1_1111".U(Instructions2.WORD_SIZE.W))
 
     /* Load lower imm uses 8 bits for the immediate */
     c.io.ins.poke(lli2)
-    c.io.ctr.poke(Control2.IMM_U)
+    c.io.ctl.poke(Control2.IMM_U)
     c.io.imm.expect("b_1111_1111".U(Instructions2.WORD_SIZE.W))
 
     /* Store word uses both srcX registers */
     c.io.ins.poke(sw2)
-    c.io.ctr.poke(Control2.IMM_S)
+    c.io.ctl.poke(Control2.IMM_S)
     c.io.imm.expect("b_1_1111".U(Instructions2.WORD_SIZE.W))
   }
 
-  test(new TestIntegration2) { c =>
-    c.io.ins.poke(add2)
-    c.io.imm.expect("b_11".U(Instructions2.WORD_SIZE.W))
+  test(new ALU2) { c =>
+    /* Add */
+    c.io.ctl.poke(Control2.ALU_ADD)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(4321.U)
+    c.io.out.expect(5555.U)
 
-    c.io.ins.poke(addi2)
-    c.io.imm.expect("b_1111".U(Instructions2.WORD_SIZE.W))
+    /* Sub */
+    c.io.ctl.poke(Control2.ALU_SUB)
+    c.io.src0.poke(4321.U)
+    c.io.src1.poke(1234.U)
+    c.io.out.expect(3087.U)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(4321.U)
+    c.io.out.expect("b_1111_0011_1111_0001".U) /* 2's compliment */
+
+    /* And */
+    c.io.ctl.poke(Control2.ALU_AND)
+    c.io.src0.poke("b_1111_1111".U)
+    c.io.src1.poke("b_0000_1111".U)
+    c.io.out.expect("b_1111".U)
+
+    /* Or */
+    c.io.ctl.poke(Control2.ALU_OR)
+    c.io.src0.poke("b_1010_1010".U)
+    c.io.src1.poke("b_0101_0101".U)
+    c.io.out.expect("b_1111_1111".U)
+
+    /* Xor */
+    c.io.ctl.poke(Control2.ALU_XOR)
+    c.io.src0.poke("b_0010_1011".U)
+    c.io.src1.poke("b_0001_0111".U)
+    c.io.out.expect("b_0011_1100".U)
+
+    /* Not */
+    c.io.ctl.poke(Control2.ALU_NOT)
+    c.io.src0.poke( "b_1010_1010_1010_1010".U)
+    c.io.out.expect("b_0101_0101_0101_0101".U)
+
+    /* Shift Left */
+    c.io.ctl.poke(Control2.ALU_SLL)
+    c.io.src0.poke("b_0010_1011".U)
+    c.io.src1.poke(1.U)
+    c.io.out.expect("b_0101_0110".U)
+    c.io.src1.poke(2.U)
+    c.io.out.expect("b_1010_1100".U)
+
+    /* Shift Right */
+    c.io.ctl.poke(Control2.ALU_SRL)
+    c.io.src0.poke("b_0010_1011".U)
+    c.io.src1.poke(1.U)
+    c.io.out.expect("b_001_0101".U)
+    c.io.src1.poke(2.U)
+    c.io.out.expect("b_00_1010".U)
+
+    /* EQ */
+    c.io.ctl.poke(Control2.ALU_EQ)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1234.U)
+    c.io.flags.expect(1.U)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1235.U)
+    c.io.flags.expect(0.U)
+
+    /* GE */
+    c.io.ctl.poke(Control2.ALU_GEU)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1234.U)
+    c.io.flags.expect(1.U)
+    c.io.src0.poke(1235.U)
+    c.io.src1.poke(1234.U)
+    c.io.flags.expect(2.U)
+    c.io.src0.poke(1233.U)
+    c.io.src1.poke(1234.U)
+    c.io.flags.expect(0.U)
+    c.io.ctl.poke(Control2.ALU_GE)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1234.U)
+    c.io.flags.expect(1.U)
+    c.io.src0.poke(1235.U)
+    c.io.src1.poke(1234.U)
+    c.io.flags.expect(2.U)
+    c.io.src0.poke("b_1111_1011_0010_1111".U)
+    c.io.src1.poke("b_1111_1011_0010_1110".U)
+    c.io.flags.expect(2.U)
+    c.io.src0.poke("b_0111_1011_0010_1111".U)
+    c.io.src1.poke("b_1111_1011_0010_1110".U)
+    c.io.flags.expect(2.U)
+    c.io.src0.poke("b_1111_1011_0010_1110".U)
+    c.io.src1.poke("b_1111_1011_0010_1111".U)
+    c.io.flags.expect(0.U)
+    c.io.src0.poke("b_1111_1011_0010_1110".U)
+    c.io.src1.poke("b_0111_1011_0010_1111".U)
+    c.io.flags.expect(0.U)
+  }
+
+  test(new TestIntegration2) { c =>
+    /* Add immediate (15) and x0 to x1 to store some value */
+    var ins = "b_0011_1110_0000_1000".U /* Adds contents of x2 and imm (15) into x1 */
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1111".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Adds contents of x0 and x1 into x0 to check output of x1 */
+    ins = "b_0000_0000_0100_0000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1111".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Shift x1 by 4 to increase the value by 2^4 and store back in x1 */
+    ins = "b_1010_1000_0100_1001".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1111_0000".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Add 1 to x1 and store in x2*/
+    ins = "b_0010_0010_0101_0000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1111_0001".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Adds contents of x0 and x2 into x0 to check output of x2 */
+    ins = "b_0000_0000_1000_0000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1111_0001".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Add x1 and x2 and store in x3 */
+    ins = "b_0000_1000_0101_1000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b1_1110_0001".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Adds contents of x0 and x3 into x0 to check output of x3 */
+    ins = "b_0000_0000_1100_0000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b1_1110_0001".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Divide x1 by 2 using a right shift and store in x4 */
+    ins = "b_1100_0000_0110_0001".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_111_1000".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Adds contents of x0 and x4 into x0 to check output of x4 */
+    ins = "b_0000_0001_0000_0000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_111_1000".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Subtract x3 by x4 and store result in x5 */
+    ins = "b_0101_0000_1110_1000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1_0110_1001".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Subtract x4 by x3 and store result in x6 */
+    ins = "b_0100_1101_0011_0000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1111_1110_1001_0111".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
+
+    /* Adds contents of x0 and x6 into x0 to check output of x6 */
+    ins = "b_0000_0001_1000_0000".U
+    c.io.ins.poke(ins)
+    c.io.out.expect("b_1111_1110_1001_0111".U(Instructions2.WORD_SIZE.W))
+    c.clock.step(1)
   }
 
   println("SUCCESS!!")

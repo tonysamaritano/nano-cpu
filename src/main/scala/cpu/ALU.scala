@@ -1,7 +1,7 @@
 package cpu
 
 import chisel3._
-import chisel3.util.MuxLookup
+import chisel3.util.{MuxLookup, Cat}
 
 class ALU(width: Int) extends Module {
   val io = IO(new Bundle {
@@ -25,4 +25,38 @@ class ALU(width: Int) extends Module {
   /* Flags for carry/borrow and zero */
   io.carry := sum(width)
   io.zero := sum===0.U
+}
+
+class ALUIO extends Bundle {
+  val ctl   = Input(UInt(Control2.ALU_BITWIDTH))
+  val src0  = Input(UInt(Instructions2.WORD_SIZE.W))
+  val src1  = Input(UInt(Instructions2.WORD_SIZE.W))
+  val out   = Output(UInt(Instructions2.WORD_SIZE.W))
+  val flags = Output(UInt(Control2.ALU_FLAGS))
+}
+
+class ALU2 extends Module {
+  val io = IO(new ALUIO)
+
+  /* Lookup the operation to execute */
+  val out = MuxLookup(io.ctl, 0.U, Seq(
+    Control2.ALU_ADD -> (io.src0 +& io.src1),
+    Control2.ALU_SUB -> (io.src0 -& io.src1),
+    Control2.ALU_AND -> (io.src0 & io.src1),
+    Control2.ALU_OR  -> (io.src0 | io.src1),
+    Control2.ALU_XOR -> (io.src0 ^ io.src1),
+    Control2.ALU_NOT -> (~io.src0),
+    Control2.ALU_SLL -> (io.src0 << io.src1),
+    Control2.ALU_SRL -> (io.src0 >> io.src1),
+  ))
+
+  val eq = io.src0 === io.src1
+  val gt = MuxLookup(io.ctl, 0.U, Seq(
+    Control2.ALU_GE  -> (io.src0.asSInt > io.src1.asSInt),
+    Control2.ALU_GEU -> (io.src0 > io.src1),
+  ))
+
+  /* Output Word */
+  io.out := out
+  io.flags := Cat(gt, eq)
 }

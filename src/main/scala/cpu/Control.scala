@@ -83,6 +83,25 @@ class ControlSignals(width: Int) extends Module {
 }
 
 object Control2 {
+  /* ALU Control */
+  def ALU_BITWIDTH = 4.W
+  def ALU_ADD = 0.U(ALU_BITWIDTH)
+  def ALU_SUB = 1.U(ALU_BITWIDTH)
+  def ALU_AND = 2.U(ALU_BITWIDTH)
+  def ALU_OR  = 3.U(ALU_BITWIDTH)
+  def ALU_XOR = 4.U(ALU_BITWIDTH)
+  def ALU_NOT = 5.U(ALU_BITWIDTH)
+  def ALU_SLL = 6.U(ALU_BITWIDTH)
+  def ALU_SRL = 7.U(ALU_BITWIDTH)
+  def ALU_EQ  = 8.U(ALU_BITWIDTH)
+  def ALU_GE  = 9.U(ALU_BITWIDTH)
+  def ALU_GEU = 10.U(ALU_BITWIDTH)
+
+  /* ALU Flags */
+  def ALU_FLAGS = 2.W
+  def ALU_FEQ  = 0
+  def ALU_FGT  = 1
+
   /* Imm Control */
   def IMM_BITWIDTH = 2.W
   val IMM_RI      = 0.U(IMM_BITWIDTH)
@@ -90,20 +109,43 @@ object Control2 {
   val IMM_U       = 2.U(IMM_BITWIDTH)
   val IMM_S       = 3.U(IMM_BITWIDTH)
 
+  /* Source 1 Datapath */
+  def SRC1DP_BITWIDTH = 2.W
+  val SRC1DP_REG      = 0.U(SRC1DP_BITWIDTH)
+  val SRC1DP_IMM      = 1.U(SRC1DP_BITWIDTH)
+  val SRC1DP_ONE      = 2.U(SRC1DP_BITWIDTH)
+
+  /* Write Control */
+  def WB_BITWIDTH     = 2.W
+  val WB_XXX          = 0.U(WB_BITWIDTH)
+  val WB_REG          = 1.U(WB_BITWIDTH)
+
   /* Default Control Signal */
-  val default = List(IMM_RI)
+  val default = List(IMM_RI, SRC1DP_REG, WB_XXX, ALU_ADD)
 
   /* Control Signal Lookup */
-  /*               Imm Gen */
+  /*                           Imm Gen, Src1,       Write,  ALU Ctl, */
   val map = Array(
-    Instructions2.ADD  -> List(  IMM_RI),
-    Instructions2.ADDI -> List(  IMM_RI),
+    Instructions2.ADD  -> List(IMM_RI,  SRC1DP_REG, WB_REG, ALU_ADD),
+    Instructions2.ADDI -> List(IMM_RI,  SRC1DP_IMM, WB_REG, ALU_ADD),
+    Instructions2.SUB  -> List(IMM_RI,  SRC1DP_REG, WB_REG, ALU_SUB),
+    Instructions2.AND  -> List(IMM_RI,  SRC1DP_REG, WB_REG, ALU_AND),
+    Instructions2.OR   -> List(IMM_RI,  SRC1DP_REG, WB_REG, ALU_OR),
+    Instructions2.XOR  -> List(IMM_RI,  SRC1DP_REG, WB_REG, ALU_XOR),
+    Instructions2.NOT  -> List(IMM_RI,  SRC1DP_REG, WB_REG, ALU_NOT),
+    Instructions2.SLL  -> List(IMM_RI,  SRC1DP_ONE, WB_REG, ALU_SLL),
+    Instructions2.SLLI -> List(IMM_RI,  SRC1DP_IMM, WB_REG, ALU_SLL),
+    Instructions2.SRL  -> List(IMM_RI,  SRC1DP_ONE, WB_REG, ALU_SRL),
+    Instructions2.SRLI -> List(IMM_RI,  SRC1DP_IMM, WB_REG, ALU_SRL),
   )
 }
 
 class Controller2 extends Bundle {
-  val ins = Input(UInt(Instructions2.INS_SIZE.W))
-  val imm = Output(UInt(Control2.IMM_BITWIDTH))
+  val ins  = Input(UInt(Instructions2.INS_SIZE.W))
+  val imm  = Output(UInt(Control2.IMM_BITWIDTH))
+  val src1 = Output(UInt(Control2.SRC1DP_BITWIDTH))
+  val wb   = Output(UInt(Control2.WB_BITWIDTH))
+  val alu  = Output(UInt(Control2.ALU_BITWIDTH))
 }
 
 class Controller extends Module {
@@ -111,5 +153,8 @@ class Controller extends Module {
 
   val ctrlSignals = ListLookup(io.ins, Control2.default, Control2.map)
 
-  io.imm := ctrlSignals(0)
+  io.imm  := ctrlSignals(0) /* Imm Gen Signal */
+  io.src1 := ctrlSignals(1) /* Source 1 datapath signal select */
+  io.wb   := ctrlSignals(2) /* Write back control */
+  io.alu  := ctrlSignals(3) /* ALU control signal */
 }
