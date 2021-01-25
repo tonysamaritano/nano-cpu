@@ -217,78 +217,14 @@ object main extends App {
     c.io.flags.expect(0.U)
   }
 
+
   test(new TestIntegration2) { c =>
-    /* Add immediate (15) and x0 to x1 to store some value */
-    var ins = "b_0011_1110_0000_1000".U /* Adds contents of x2 and imm (15) into x1 */
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1111".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Adds contents of x0 and x1 into x0 to check output of x1 */
-    ins = "b_0000_0000_0100_0000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1111".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Shift x1 by 4 to increase the value by 2^4 and store back in x1 */
-    ins = "b_1010_1000_0100_1001".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1111_0000".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Add 1 to x1 and store in x2*/
-    ins = "b_0010_0010_0101_0000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1111_0001".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Adds contents of x0 and x2 into x0 to check output of x2 */
-    ins = "b_0000_0000_1000_0000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1111_0001".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Add x1 and x2 and store in x3 */
-    ins = "b_0000_1000_0101_1000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b1_1110_0001".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Adds contents of x0 and x3 into x0 to check output of x3 */
-    ins = "b_0000_0000_1100_0000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b1_1110_0001".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Divide x1 by 2 using a right shift and store in x4 */
-    ins = "b_1100_0000_0110_0001".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_111_1000".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Adds contents of x0 and x4 into x0 to check output of x4 */
-    ins = "b_0000_0001_0000_0000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_111_1000".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Subtract x3 by x4 and store result in x5 */
-    ins = "b_0101_0000_1110_1000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1_0110_1001".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Subtract x4 by x3 and store result in x6 */
-    ins = "b_0100_1101_0011_0000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1111_1110_1001_0111".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
-
-    /* Adds contents of x0 and x6 into x0 to check output of x6 */
-    ins = "b_0000_0001_1000_0000".U
-    c.io.ins.poke(ins)
-    c.io.out.expect("b_1111_1110_1001_0111".U(Instructions.WORD_SIZE.W))
-    c.clock.step(1)
+    for ((ins, i) <- TestPrograms.program1.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()} = {${ins.verf()} === ${c.io.out.peek()}}")
+      c.io.out.expect(ins.verf())
+      c.clock.step(1)
+    }
   }
 
   println("SUCCESS!!")

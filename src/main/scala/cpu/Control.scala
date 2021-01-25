@@ -1,7 +1,7 @@
 package cpu
 
 import chisel3._
-import chisel3.util.{ListLookup, Enum, log2Ceil}
+import chisel3.util.{ListLookup}
 
 import Instructions._
 
@@ -27,21 +27,21 @@ object Control {
 
   /* Imm Control */
   def IMM_BITWIDTH = 2.W
-  val IMM_RI      = 0.U(IMM_BITWIDTH)
-  val IMM_I5      = 1.U(IMM_BITWIDTH)
-  val IMM_U       = 2.U(IMM_BITWIDTH)
-  val IMM_S       = 3.U(IMM_BITWIDTH)
+  def IMM_RI      = 0.U(IMM_BITWIDTH)
+  def IMM_I5      = 1.U(IMM_BITWIDTH)
+  def IMM_U       = 2.U(IMM_BITWIDTH)
+  def IMM_S       = 3.U(IMM_BITWIDTH)
 
   /* Source 1 Datapath */
   def SRC1DP_BITWIDTH = 2.W
-  val SRC1DP_REG      = 0.U(SRC1DP_BITWIDTH)
-  val SRC1DP_IMM      = 1.U(SRC1DP_BITWIDTH)
-  val SRC1DP_ONE      = 2.U(SRC1DP_BITWIDTH)
+  def SRC1DP_REG      = 0.U(SRC1DP_BITWIDTH)
+  def SRC1DP_IMM      = 1.U(SRC1DP_BITWIDTH)
+  def SRC1DP_ONE      = 2.U(SRC1DP_BITWIDTH)
 
   /* Write Control */
   def WB_BITWIDTH     = 2.W
-  val WB_XXX          = 0.U(WB_BITWIDTH)
-  val WB_REG          = 1.U(WB_BITWIDTH)
+  def WB_XXX          = 0.U(WB_BITWIDTH)
+  def WB_REG          = 1.U(WB_BITWIDTH)
 
   /* Default Control Signal */
   val default = List(IMM_RI, SRC1DP_REG, WB_XXX, ALU_ADD)

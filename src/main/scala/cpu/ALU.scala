@@ -16,8 +16,8 @@ class ALU extends Module {
 
   /* Lookup the operation to execute */
   val out = MuxLookup(io.ctl, 0.U, Seq(
-    Control.ALU_ADD -> (io.src0 +& io.src1),
-    Control.ALU_SUB -> (io.src0 -& io.src1),
+    Control.ALU_ADD -> (io.src0 + io.src1),
+    Control.ALU_SUB -> (io.src0 - io.src1),
     Control.ALU_AND -> (io.src0 & io.src1),
     Control.ALU_OR  -> (io.src0 | io.src1),
     Control.ALU_XOR -> (io.src0 ^ io.src1),
