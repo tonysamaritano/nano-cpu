@@ -129,29 +129,28 @@ I think this will be a nice, simple way for the processor to be mildly useful.
 |OR|R|`0x1`|src1|`N/A`|src0|dst|`0x1`|
 |XOR|R|`0x2`|src1|`N/A`|src0|dst|`0x1`|
 |NOT|R|`0x3`|`N/A`|`N/A`|src0|dst|`0x1`|
-|SLL|R|`0x4`|`N/A`|`N/A`|src0|dst|`0x1`|
+|SLL|R|`0x4`|src1|`N/A`|src0|dst|`0x1`|
 |SLLI|I|`0x5`|imm[`3:1`]|imm[`0`]|src0|dst|`0x1`|
-|SRL|R|`0x6`|`N/A`|`N/A`|src0|dst|`0x1`|
+|SRL|R|`0x6`|src1|`N/A`|src0|dst|`0x1`|
 |SRLI|I|`0x7`|imm[`3:1`]|imm[`0`]|src0|dst|`0x1`|
 |LB|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
 |LW|I|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
-|LLI|U|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
-|LUAI|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
-|SPC|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x3`|
-|SB|S|imm[`4`], `0x1`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
-|SW|S|imm[`4`], `0x2`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
-|EQ|R|`0x0`|src1|`N/A`|src0|dst|`0x4`|
-|NEQ|R|`0x1`|src1|`N/A`|src0|dst|`0x4`|
-|GE|R|`0x2`|src1|`N/A`|src0|dst|`0x4`|
-|GEU|R|`0x3`|src1|`N/A`|src0|dst|`0x4`|
-|LT|R|`0x4`|src1|`N/A`|src0|dst|`0x4`|
-|LTU|R|`0x5`|src1|`N/A`|src0|dst|`0x4`|
+|LLI|UU|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
+|LUAI|UU|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
+|SB|S|imm[`4`], `0x0`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
+|SW|S|imm[`4`], `0x1`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
+|EQ|R|`0x0`|src1|`N/A`|src0|`N/A`|`0x4`|
+|NEQ|R|`0x1`|src1|`N/A`|src0|`N/A`|`0x4`|
+|GE|R|`0x2`|src1|`N/A`|src0|`N/A`|`0x4`|
+|GEU|R|`0x3`|src1|`N/A`|src0|`N/A`|`0x4`|
+|LT|R|`0x4`|src1|`N/A`|src0|`N/A`|`0x4`|
+|LTU|R|`0x5`|src1|`N/A`|src0|`N/A`|`0x4`|
 |JALR|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x5`|
 |JAL|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x5`|
-|BFEQ|U|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
-|BFNE|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
-|BFGE|U|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
-|BFLT|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x6`|
+|BFEQ|U|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
+|BFNE|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
+|BFGE|U|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
+|BFLT|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
 |CLR|R|`0x0`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
 |FLG|R|`0x1`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
 |HLT|R|`0x7`|`N/A`|`N/A`|`N/A`|`N/A`|`0x7`|

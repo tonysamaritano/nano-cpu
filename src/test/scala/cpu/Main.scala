@@ -94,33 +94,6 @@ object main extends App {
     c.io.out0.expect(0.U)
   }
 
-  test(new ImmGen) { c =>
-    c.io.ins.poke(addi2)
-    c.io.ctl.poke(Control.IMM_RI)
-    c.io.imm.expect("b_1111".U(Instructions.WORD_SIZE.W))
-
-    /* Add ins is using src1 = 001 and func1 = 1, so those are Cat'ed
-     * to form 3 */
-    c.io.ins.poke(add2)
-    c.io.ctl.poke(Control.IMM_RI)
-    c.io.imm.expect("b_0011".U(Instructions.WORD_SIZE.W))
-
-    /* Load word uses 5 bits for the immediate */
-    c.io.ins.poke(lw2)
-    c.io.ctl.poke(Control.IMM_I5)
-    c.io.imm.expect("b_1_1111".U(Instructions.WORD_SIZE.W))
-
-    /* Load lower imm uses 8 bits for the immediate */
-    c.io.ins.poke(lli2)
-    c.io.ctl.poke(Control.IMM_U)
-    c.io.imm.expect("b_1111_1111".U(Instructions.WORD_SIZE.W))
-
-    /* Store word uses both srcX registers */
-    c.io.ins.poke(sw2)
-    c.io.ctl.poke(Control.IMM_S)
-    c.io.imm.expect("b_1_1111".U(Instructions.WORD_SIZE.W))
-  }
-
   test(new ALU) { c =>
     /* Add */
     c.io.ctl.poke(Control.ALU_ADD)
@@ -180,51 +153,192 @@ object main extends App {
     c.io.ctl.poke(Control.ALU_EQ)
     c.io.src0.poke(1234.U)
     c.io.src1.poke(1234.U)
-    c.io.flags.expect(1.U)
+    c.io.br.expect(true.B)
     c.io.src0.poke(1234.U)
     c.io.src1.poke(1235.U)
-    c.io.flags.expect(0.U)
+    c.io.br.expect(false.B)
+
+    /* NE */
+    c.io.ctl.poke(Control.ALU_NE)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1234.U)
+    c.io.br.expect(false.B)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1235.U)
+    c.io.br.expect(true.B)
 
     /* GE */
     c.io.ctl.poke(Control.ALU_GEU)
     c.io.src0.poke(1234.U)
     c.io.src1.poke(1234.U)
-    c.io.flags.expect(1.U)
+    c.io.br.expect(true.B)
     c.io.src0.poke(1235.U)
     c.io.src1.poke(1234.U)
-    c.io.flags.expect(2.U)
+    c.io.br.expect(true.B)
     c.io.src0.poke(1233.U)
     c.io.src1.poke(1234.U)
-    c.io.flags.expect(0.U)
+    c.io.br.expect(false.B)
     c.io.ctl.poke(Control.ALU_GE)
     c.io.src0.poke(1234.U)
     c.io.src1.poke(1234.U)
-    c.io.flags.expect(1.U)
+    c.io.br.expect(true.B)
     c.io.src0.poke(1235.U)
     c.io.src1.poke(1234.U)
-    c.io.flags.expect(2.U)
+    c.io.br.expect(true.B)
     c.io.src0.poke("b_1111_1011_0010_1111".U)
     c.io.src1.poke("b_1111_1011_0010_1110".U)
-    c.io.flags.expect(2.U)
+    c.io.br.expect(true.B)
     c.io.src0.poke("b_0111_1011_0010_1111".U)
     c.io.src1.poke("b_1111_1011_0010_1110".U)
-    c.io.flags.expect(2.U)
+    c.io.br.expect(true.B)
     c.io.src0.poke("b_1111_1011_0010_1110".U)
     c.io.src1.poke("b_1111_1011_0010_1111".U)
-    c.io.flags.expect(0.U)
+    c.io.br.expect(false.B)
     c.io.src0.poke("b_1111_1011_0010_1110".U)
     c.io.src1.poke("b_0111_1011_0010_1111".U)
-    c.io.flags.expect(0.U)
-  }
+    c.io.br.expect(false.B)
 
+    /* LT */
+    c.io.ctl.poke(Control.ALU_LTU)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1234.U)
+    c.io.br.expect(false.B)
+    c.io.src0.poke(1235.U)
+    c.io.src1.poke(1234.U)
+    c.io.br.expect(false.B)
+    c.io.src0.poke(1233.U)
+    c.io.src1.poke(1234.U)
+    c.io.br.expect(true.B)
+    c.io.ctl.poke(Control.ALU_LT)
+    c.io.src0.poke(1234.U)
+    c.io.src1.poke(1234.U)
+    c.io.br.expect(false.B)
+    c.io.src0.poke(1235.U)
+    c.io.src1.poke(1234.U)
+    c.io.br.expect(false.B)
+    c.io.src0.poke("b_1111_1011_0010_1111".U)
+    c.io.src1.poke("b_1111_1011_0010_1110".U)
+    c.io.br.expect(false.B)
+    c.io.src0.poke("b_0111_1011_0010_1111".U)
+    c.io.src1.poke("b_1111_1011_0010_1110".U)
+    c.io.br.expect(false.B)
+    c.io.src0.poke("b_1111_1011_0010_1110".U)
+    c.io.src1.poke("b_1111_1011_0010_1111".U)
+    c.io.br.expect(true.B)
+    c.io.src0.poke("b_1111_1011_0010_1110".U)
+    c.io.src1.poke("b_0111_1011_0010_1111".U)
+    c.io.br.expect(true.B)
+  }
 
   test(new TestIntegration2) { c =>
     for ((ins, i) <- TestPrograms.program1.zipWithIndex) {
       c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.verf()} === ${c.io.out.peek()}}")
-      c.io.out.expect(ins.verf())
+      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      c.io.out.expect(ins.out())
+      c.io.flg.expect(ins.flags())
       c.clock.step(1)
     }
+
+    for ((ins, i) <- TestPrograms.program2.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      c.io.out.expect(ins.out())
+      c.io.flg.expect(ins.flags())
+      c.clock.step(1)
+    }
+
+    for ((ins, i) <- TestPrograms.program3.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      c.clock.step(1)
+      c.io.out.expect(ins.out())
+      c.io.flg.expect(ins.flags())
+    }
+  }
+
+  test(new ImmGen) { c =>
+    /* 4-bit immediate */
+    c.io.ins.poke("b_0011_0010_0000_0000".U)
+    c.io.ctl.poke(Control.IMM_RI)
+    c.io.imm.expect(-7.S)
+
+    c.io.ins.poke("b_0010_1110_0000_0000".U)
+    c.io.ctl.poke(Control.IMM_RI)
+    c.io.imm.expect(7.S)
+
+    /* 5-bit immediate */
+    c.io.ins.poke("b_1010_0010_0000_0000".U)
+    c.io.ctl.poke(Control.IMM_I5)
+    c.io.imm.expect(-15.S)
+
+    c.io.ins.poke("b_0011_1110_0000_0000".U)
+    c.io.ctl.poke(Control.IMM_I5)
+    c.io.imm.expect(15.S)
+
+    /* 8-bit immediate */
+    c.io.ins.poke("b_0010_0011_0000_0000".U)
+    c.io.ctl.poke(Control.IMM_U)
+    c.io.imm.expect(-127.S)
+
+    c.io.ins.poke("b_1011_1110_1100_0000".U)
+    c.io.ctl.poke(Control.IMM_U)
+    c.io.imm.expect(127.S)
+
+    /* 8-bit immediate unsigned */
+    c.io.ins.poke("b_1011_1111_1100_0000".U)
+    c.io.ctl.poke(Control.IMM_UU)
+    c.io.imm.expect(255.S)
+
+    /* 5-bit immediate */
+    c.io.ins.poke("b_1010_0010_0000_0000".U)
+    c.io.ctl.poke(Control.IMM_S)
+    c.io.imm.expect(-15.S)
+
+    c.io.ins.poke("b_0010_0010_0011_1000".U)
+    c.io.ctl.poke(Control.IMM_S)
+    c.io.imm.expect(15.S)
+  }
+
+  test(new ProgramCounterCircuit){ c =>
+    c.io.ctl.poke(Control.PC_INC)
+    c.io.pc.poke(0.U)
+    c.io.imm.poke(0.S)
+    c.io.pc_out.expect(2.U)
+
+    c.io.ctl.poke(Control.PC_INC)
+    c.io.pc.poke(1234.U)
+    c.io.imm.poke(0.S)
+    c.io.pc_out.expect(1236.U)
+
+    c.io.ctl.poke(Control.PC_BRI)
+    c.io.pc.poke(1234.U)
+    c.io.imm.poke(-1.S)
+    c.io.br.poke(true.B)
+    c.io.pc_out.expect(1232.U)
+
+    c.io.ctl.poke(Control.PC_BRI)
+    c.io.pc.poke(1234.U)
+    c.io.br.poke(true.B)
+    c.io.imm.poke(-127.S)
+    c.io.pc_out.expect(980.U)
+
+    c.io.ctl.poke(Control.PC_BRI)
+    c.io.pc.poke(1234.U)
+    c.io.br.poke(true.B)
+    c.io.imm.poke(127.S)
+    c.io.pc_out.expect(1488.U)
+
+    c.io.ctl.poke(Control.PC_BRR)
+    c.io.pc.poke(1234.U)
+    c.io.br.poke(true.B)
+    c.io.imm.poke(0.S)
+    c.io.src0.poke(12345.U)
+    c.io.pc_out.expect(12345.U)
+
+    c.io.ctl.poke(Control.PC_STALL)
+    c.io.pc.poke(1234.U)
+    c.io.imm.poke(127.S)
+    c.io.pc_out.expect(1234.U)
   }
 
   println("SUCCESS!!")
