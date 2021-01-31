@@ -3,12 +3,6 @@ package cpu
 import chisel3._
 import chisel3.util.{Cat, MuxLookup}
 
-class ImmGenIO extends Bundle {
-  val ctl = Input(UInt(Control.IMM_BITWIDTH))
-  val ins = Input(UInt(Instructions.INS_SIZE.W))
-  val imm = Output(UInt(Instructions.WORD_SIZE.W))
-}
-
 class ImmGen extends Module {
   val io = IO(new Bundle {
     val ctl = Input(UInt(Control.IMM_BITWIDTH))
