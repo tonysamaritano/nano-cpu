@@ -135,21 +135,19 @@ I think this will be a nice, simple way for the processor to be mildly useful.
 |**SRLI**|I|`0x7`|imm[`3:1`]|imm[`0`]|src0|dst|`0x1`|
 |LB|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
 |LW|I|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
-|LLI|UU|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
-|LUAI|UU|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
+|**LLI**|UU|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x2`|
+|**LUAI**|UUU|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
 |SB|S|imm[`4`], `0x0`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
 |SW|S|imm[`4`], `0x1`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
-|**EQ**|R|`0x0`|src1|`N/A`|src0|`N/A`|`0x4`|
-|**NEQ**|R|`0x1`|src1|`N/A`|src0|`N/A`|`0x4`|
-|**GE**|R|`0x2`|src1|`N/A`|src0|`N/A`|`0x4`|
-|**GEU**|R|`0x3`|src1|`N/A`|src0|`N/A`|`0x4`|
-|**LT**|R|`0x4`|src1|`N/A`|src0|`N/A`|`0x4`|
-|**LTU**|R|`0x5`|src1|`N/A`|src0|`N/A`|`0x4`|
+|**EQ**|C|`0x0`|src1|`N/A`|src0|`N/A`|`0x4`|
+|**NEQ**|C|`0x1`|src1|`N/A`|src0|`N/A`|`0x4`|
+|**GE**|C|`0x2`|src1|`N/A`|src0|`N/A`|`0x4`|
+|**GEU**|C|`0x3`|src1|`N/A`|src0|`N/A`|`0x4`|
+|**LT**|C|`0x4`|src1|`N/A`|src0|`N/A`|`0x4`|
+|**LTU**|C|`0x5`|src1|`N/A`|src0|`N/A`|`0x4`|
 |**JALR**|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x5`|
 |**JAL**|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x5`|
 |**BR**|B|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|imm[`10:8`]|`0x6`|
-|CLR|R|`0x0`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
-|FLG|R|`0x1`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
 |HLT|R|`0x7`|`N/A`|`N/A`|`N/A`|`N/A`|`0x7`|
 
 ## ISA Description

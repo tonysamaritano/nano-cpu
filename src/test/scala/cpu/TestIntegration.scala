@@ -52,7 +52,7 @@ object TestPrograms {
     new InstructionValidation("b_0100_1100_1000_0100".U, 0.U, "Checks if x2 > x3"),
     new InstructionValidation("b_0110_1100_1000_0100".U, 0.U, "Checks if x2 > x3 unsigned"),
     new InstructionValidation("b_0000_0100_0100_0100".U, 0.U, "Checks if x1 == x1"),
-    new InstructionValidation("b_1000_0100_0100_0110".U, 0.U, "BR PC+100"),
+    new InstructionValidation("b_1001_1001_1101_1110".U, 0.U, "BR PC+2040"),
     new InstructionValidation("b_0010_0100_0100_0100".U, 0.U, "Checks if x1 != x1"),
     new InstructionValidation("b_1000_0100_0100_0110".U, 0.U, "BR PC+100"),
     new InstructionValidation("b_0010_1000_1100_0101".U, 0.U, "Jumps to 200(PC) and stores PC into x0"),
@@ -60,7 +60,13 @@ object TestPrograms {
   )
 
   var program4 = Array(
-    new InstructionValidation("b_0011_1110_0000_1010".U, 15.U, "Load 30(x0) to x1"),
+    new InstructionValidation("b_0000_0000_0011_1101".U, 0.U, "Jumps to x0 and stores PC into x7"),
+    new InstructionValidation("b_1101_1111_1100_0010".U, 0.U, "Load Lower Imm 255"),
+    new InstructionValidation("b_1111_1111_1100_1010".U, 0.U, "Load Upper Imm 255 and store in x1"),
+    new InstructionValidation("b_0000_0000_0100_0000".U, 65535.U, "Adds x0 and x1 into x0 to check output of x1"),
+    new InstructionValidation("b_1101_1111_1100_0010".U, 0.U, "Load Lower Imm 255"),
+    new InstructionValidation("b_1111_1110_1100_1010".U, 0.U, "Load Upper Imm 127 and store in x1"),
+    new InstructionValidation("b_0000_0000_0100_0000".U, 32767.U, "Adds x0 and x1 into x0 to check output of x1"),
   )
 }
 

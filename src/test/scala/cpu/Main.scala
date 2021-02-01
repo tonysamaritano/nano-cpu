@@ -263,6 +263,11 @@ object main extends App {
     c.io.ctl.poke(Control.IMM_UU)
     c.io.imm.expect(255.S)
 
+    /* 8-bit immediate unsigned upper */
+    c.io.ins.poke("b_1001_1111_1100_0000".U)
+    c.io.ctl.poke(Control.IMM_UUU)
+    c.io.imm.expect(-256.S) /* -256.S is 65280.U */
+
     /* 5-bit immediate */
     c.io.ins.poke("b_1010_0010_0000_0000".U)
     c.io.ctl.poke(Control.IMM_S)
@@ -298,6 +303,13 @@ object main extends App {
     }
 
     for ((ins, i) <- TestPrograms.program3.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      c.io.out.expect(ins.out())
+      c.clock.step(1)
+    }
+
+    for ((ins, i) <- TestPrograms.program4.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
       c.io.out.expect(ins.out())

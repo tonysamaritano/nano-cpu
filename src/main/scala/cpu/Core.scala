@@ -12,7 +12,6 @@ class CoreIO extends Bundle {
   val ins    = Input(UInt(Instructions.INS_SIZE.W))
   val in     = new CoreData
   val out    = Flipped(new CoreData)
-  val ctl    = new Control
   val pc_sel = Output(Bool())
 }
 
@@ -25,12 +24,13 @@ class DecodeIO extends Bundle {
 }
 
 class ExecuteIO extends Bundle {
-  val src    = Flipped(new RegisterData)
-  val ctl    = Flipped(new Control)
-  val imm    = Input(SInt(Instructions.WORD_SIZE.W))
-  val pc_in  = Input(UInt(Instructions.ARCH_SIZE.W))
-  val pc_out = Output(UInt(Instructions.ARCH_SIZE.W))
-  val alu    = new ALUData
+  val src     = Flipped(new RegisterData)
+  val ctl     = Flipped(new Control)
+  val imm     = Input(SInt(Instructions.WORD_SIZE.W))
+  val pc_in   = Input(UInt(Instructions.ARCH_SIZE.W))
+  val pc_out  = Output(UInt(Instructions.ARCH_SIZE.W))
+  val ld_word = Output(UInt(Instructions.WORD_SIZE.W))
+  val alu     = new ALUData
 }
 
 class Decode extends Module {
@@ -61,6 +61,12 @@ class Execute extends Module {
 
   val alu = Module(new ALU)
 
+  /* Holds the word to be written */
+  val ld  = RegInit(0.U)
+
+  /* Loads the lower 8 bits into ld register */
+  ld := Mux(io.ctl.ld.asBool, io.imm.asUInt, 0.U)
+
   alu.io.ctl  := io.ctl.alu
   alu.io.src0 := io.src.src0
   alu.io.src1 := Mux(io.ctl.src1.asBool, io.imm.asUInt, io.src.src1)
@@ -73,6 +79,9 @@ class Execute extends Module {
     io.pc_in + immShift,
     io.src.src0 + immShift
   )
+
+  /* Adds upper and lower 8 bits */
+  io.ld_word := ld + io.imm.asUInt
 }
 
 class Core extends Module {
@@ -84,10 +93,11 @@ class Core extends Module {
   val brReg  = RegInit(false.B)
 
   decode.io.ins  := io.ins
-  decode.io.data := MuxLookup(io.ctl.wb, 0.U, Seq(
+  decode.io.data := MuxLookup(decode.io.ctl.wb, 0.U, Seq(
     Control.WB_ALU  -> exec.io.alu.out,
     Control.WB_PC   -> (io.in.pc + 2.U),
-    Control.WB_DATA -> io.in.data
+    Control.WB_DATA -> io.in.data,
+    Control.WB_WORD -> exec.io.ld_word
   ))
 
   exec.io.src <> decode.io.src
@@ -98,7 +108,6 @@ class Core extends Module {
   /* Delays branch flag for next cycle */
   brReg := exec.io.alu.br
 
-  io.ctl <> decode.io.ctl
   io.out.data := exec.io.alu.out
   io.out.pc   := exec.io.pc_out
 
