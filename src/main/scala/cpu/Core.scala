@@ -61,26 +61,22 @@ class Execute extends Module {
 
   val alu = Module(new ALU)
 
-  /* Holds the word to be written */
-  val ld  = RegInit(0.U)
-
-  /* Loads the lower 8 bits into ld register */
-  ld := Mux(io.ctl.ld.asBool, io.imm.asUInt, 0.U)
-
   alu.io.ctl  := io.ctl.alu
   alu.io.src0 := io.src.src0
   alu.io.src1 := Mux(io.ctl.src1.asBool, io.imm.asUInt, io.src.src1)
 
+  io.alu <> alu.io.data
+
   /* Multiply Imm by 2 because PC can never be an odd number */
   val immShift = (io.imm.asUInt << 1)
-
-  io.alu    <> alu.io.data
   io.pc_out := Mux(io.ctl.br.asBool,
     io.pc_in + immShift,
     io.src.src0 + immShift
   )
 
-  /* Adds upper and lower 8 bits */
+  /* Adds upper and lower 8 bits on subsequent cycles */
+  val ld  = RegInit(0.U)
+  ld := Mux(io.ctl.ld.asBool, io.imm.asUInt, 0.U)
   io.ld_word := ld + io.imm.asUInt
 }
 
@@ -89,8 +85,6 @@ class Core extends Module {
 
   val decode = Module(new Decode)
   val exec   = Module(new Execute)
-
-  val brReg  = RegInit(false.B)
 
   decode.io.ins  := io.ins
   decode.io.data := MuxLookup(decode.io.ctl.wb, 0.U, Seq(
@@ -106,11 +100,12 @@ class Core extends Module {
   exec.io.pc_in := io.in.pc
 
   /* Delays branch flag for next cycle */
+  val brReg  = RegInit(false.B)
   brReg := exec.io.alu.br
 
   io.out.data := exec.io.alu.out
   io.out.pc   := exec.io.pc_out
 
-  /* Jumps always select computed branch */
+  /* Jumps always select computed pc */
   io.pc_sel   := Mux(io.ins(2,0)===5.U, true.B, brReg)
 }

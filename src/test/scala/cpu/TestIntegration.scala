@@ -60,7 +60,7 @@ object TestPrograms {
   )
 
   var program4 = Array(
-    new InstructionValidation("b_0000_0000_0011_1101".U, 0.U, "Jumps to x0 and stores PC into x7"),
+    new InstructionValidation("b_0000_0000_0000_0101".U, 0.U, "Jumps to x0 and stores PC into x0"),
     new InstructionValidation("b_1101_1111_1100_0010".U, 0.U, "Load Lower Imm 255"),
     new InstructionValidation("b_1111_1111_1100_1010".U, 0.U, "Load Upper Imm 255 and store in x1"),
     new InstructionValidation("b_0000_0000_0100_0000".U, 65535.U, "Adds x0 and x1 into x0 to check output of x1"),
@@ -68,12 +68,6 @@ object TestPrograms {
     new InstructionValidation("b_1111_1110_1100_1010".U, 0.U, "Load Upper Imm 127 and store in x1"),
     new InstructionValidation("b_0000_0000_0100_0000".U, 32767.U, "Adds x0 and x1 into x0 to check output of x1"),
   )
-}
-
-class IntegrationIO extends Bundle {
-  val ins  = Input(UInt(Instructions.INS_SIZE.W))
-  val out  = Output(UInt(Instructions.WORD_SIZE.W))
-  val flg  = Output(UInt(Instructions.WORD_SIZE.W))
 }
 
 class TestCore extends Module {
@@ -91,7 +85,6 @@ class TestCore extends Module {
 
   pc := Mux(core.io.pc_sel, core.io.out.pc, pc + 2.U)
 
-  printf(p"PC: $pc BR: ${core.io.pc_sel}\n")
 
   io.out := core.io.out.data
 }

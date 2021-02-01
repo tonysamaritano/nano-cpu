@@ -14,24 +14,7 @@ import chisel3.tester.RawTester.test
   * }}}
   */
 object main extends App {
-  def archWidth = 16
   val rnd = scala.util.Random;
-
-  /* Ths instruction does not exist in the ISA */
-  val invalid_ins = "b_0101_0101_1110_1101".U
-
-  /* Arithmetic Operations */
-  val add  = "b_1111_1001_1000_0000".U /* Adds contents of x6 and x7 into x3 */
-  val addi = "b_1101_1001_1000_1000".U /* Adds contents of x6 and immidiate (6) */
-  val sub  = "b_1101_1101_1001_0000".U /* Subtracts contents of x7 and x6 into x3 */
-  val ldi  = "b_1010_0101_0010_0001".U /* Loads 0xa5 into register x1 */
-
-  /* Ins2 */
-  val add2  = "b_0000_0110_1010_0000".U /* Adds contents of x2 and x1 into x6, funct1 set to 1*/
-  val addi2 = "b_0011_1110_1000_1000".U /* Adds contents of x2 and imm (15) into x1 */
-  val lw2   = "b_1011_1110_1000_1010".U /* Loads word at imm(x2) into x1 */
-  val lli2  = "b_1101_1111_1100_1010".U /* Loads lower 8-bit imm into x1 */
-  val sw2   = "b_1100_1010_0111_1011".U /* Stores word in x1 into imm(x2) */
 
   /* Tests */
   test(new PassthroughGenerator(8)) { c =>
@@ -290,28 +273,28 @@ object main extends App {
   test(new TestCore) { c =>
     for ((ins, i) <- TestPrograms.program1.zipWithIndex) {
       c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      println(s"${i}: ${ins.desc()}")
       c.io.out.expect(ins.out())
       c.clock.step(1)
     }
 
     for ((ins, i) <- TestPrograms.program2.zipWithIndex) {
       c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      println(s"${i}: ${ins.desc()}")
       c.io.out.expect(ins.out())
       c.clock.step(1)
     }
 
     for ((ins, i) <- TestPrograms.program3.zipWithIndex) {
       c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      println(s"${i}: ${ins.desc()}")
       c.io.out.expect(ins.out())
       c.clock.step(1)
     }
 
     for ((ins, i) <- TestPrograms.program4.zipWithIndex) {
       c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      println(s"${i}: ${ins.desc()}")
       c.io.out.expect(ins.out())
       c.clock.step(1)
     }
