@@ -147,10 +147,7 @@ I think this will be a nice, simple way for the processor to be mildly useful.
 |**LTU**|R|`0x5`|src1|`N/A`|src0|`N/A`|`0x4`|
 |**JALR**|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x5`|
 |**JAL**|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x5`|
-|**BFEQ**|U|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
-|**BFNE**|U|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
-|**BFGE**|U|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
-|**BFLT**|U|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x6`|
+|**BR**|B|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|imm[`10:8`]|`0x6`|
 |CLR|R|`0x0`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
 |FLG|R|`0x1`|`N/A`|`N/A`|`N/A`|dst|`0x7`|
 |HLT|R|`0x7`|`N/A`|`N/A`|`N/A`|`N/A`|`0x7`|

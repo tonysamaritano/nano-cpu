@@ -18,5 +18,6 @@ class ImmGen extends Module {
     Control.IMM_U  -> Cat(io.ins(8,6), io.ins(15), io.ins(12,9)).asSInt,
     Control.IMM_UU -> Cat(0.U((Instructions.WORD_SIZE-8).W), io.ins(8,6), io.ins(15), io.ins(12,9)).asSInt,
     Control.IMM_S  -> Cat(io.ins(15), io.ins(5,3), io.ins(9)).asSInt,
+    Control.IMM_B  -> Cat(io.ins(5,3), io.ins(8,6), io.ins(15), io.ins(12,9)).asSInt,
   ))
 }

@@ -230,40 +230,6 @@ object main extends App {
     c.io.data.br.expect(true.B)
   }
 
-  test(new TestIntegration2) { c =>
-    for ((ins, i) <- TestPrograms.program1.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
-      c.io.out.expect(ins.out())
-      c.io.flg.expect(ins.flags())
-      c.clock.step(1)
-    }
-
-    for ((ins, i) <- TestPrograms.program2.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
-      c.io.out.expect(ins.out())
-      c.io.flg.expect(ins.flags())
-      c.clock.step(1)
-    }
-
-    for ((ins, i) <- TestPrograms.program3.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
-      c.clock.step(1)
-      c.io.out.expect(ins.out())
-      c.io.flg.expect(ins.flags())
-    }
-
-    for ((ins, i) <- TestPrograms.program4.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
-      c.clock.step(1)
-      c.io.out.expect(ins.out())
-      c.io.flg.expect(ins.flags())
-    }
-  }
-
   test(new ImmGen) { c =>
     /* 4-bit immediate */
     c.io.ins.poke("b_0011_0010_0000_0000".U)
@@ -305,48 +271,38 @@ object main extends App {
     c.io.ins.poke("b_0010_0010_0011_1000".U)
     c.io.ctl.poke(Control.IMM_S)
     c.io.imm.expect(15.S)
+
+    /* 11-bit immediate */
+    c.io.ins.poke("b_0000_0010_0010_0000".U)
+    c.io.ctl.poke(Control.IMM_B)
+    c.io.imm.expect(-1023.S)
+
+    c.io.ins.poke("b_1111_1111_1101_1000".U)
+    c.io.ctl.poke(Control.IMM_B)
+    c.io.imm.expect(1023.S)
   }
 
-  test(new ProgramCounterCircuit){ c =>
-    c.io.ctl.poke(Control.PC_INC)
-    c.io.pc.poke(0.U)
-    c.io.imm.poke(0.S)
-    c.io.pc_out.expect(2.U)
+  test(new TestCore) { c =>
+    for ((ins, i) <- TestPrograms.program1.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      c.io.out.expect(ins.out())
+      c.clock.step(1)
+    }
 
-    c.io.ctl.poke(Control.PC_INC)
-    c.io.pc.poke(1234.U)
-    c.io.imm.poke(0.S)
-    c.io.pc_out.expect(1236.U)
+    for ((ins, i) <- TestPrograms.program2.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      c.io.out.expect(ins.out())
+      c.clock.step(1)
+    }
 
-    c.io.ctl.poke(Control.PC_BRI)
-    c.io.pc.poke(1234.U)
-    c.io.imm.poke(-1.S)
-    c.io.br.poke(true.B)
-    c.io.pc_out.expect(1232.U)
-
-    c.io.ctl.poke(Control.PC_BRI)
-    c.io.pc.poke(1234.U)
-    c.io.br.poke(true.B)
-    c.io.imm.poke(-127.S)
-    c.io.pc_out.expect(980.U)
-
-    c.io.ctl.poke(Control.PC_BRI)
-    c.io.pc.poke(1234.U)
-    c.io.br.poke(true.B)
-    c.io.imm.poke(127.S)
-    c.io.pc_out.expect(1488.U)
-
-    c.io.ctl.poke(Control.PC_BRR)
-    c.io.pc.poke(1234.U)
-    c.io.br.poke(true.B)
-    c.io.imm.poke(0.S)
-    c.io.src0.poke(12345.U)
-    c.io.pc_out.expect(12345.U)
-
-    c.io.ctl.poke(Control.PC_STALL)
-    c.io.pc.poke(1234.U)
-    c.io.imm.poke(127.S)
-    c.io.pc_out.expect(1234.U)
+    for ((ins, i) <- TestPrograms.program3.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()} = {${ins.out()} === ${c.io.out.peek()}}")
+      c.io.out.expect(ins.out())
+      c.clock.step(1)
+    }
   }
 
   println("SUCCESS!!")

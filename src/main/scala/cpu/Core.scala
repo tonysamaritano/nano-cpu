@@ -1,11 +1,19 @@
 package cpu
 
 import chisel3._
+import chisel3.util.{MuxLookup}
+
+class CoreData extends Bundle {
+  val pc   = Input(UInt(Instructions.ARCH_SIZE.W))
+  val data = Input(UInt(Instructions.WORD_SIZE.W))
+}
 
 class CoreIO extends Bundle {
-  val ins  = Input(UInt(Instructions.INS_SIZE.W))
-  val data = Output(UInt(Instructions.WORD_SIZE.W))
-  val ctl  = Output(new Control)
+  val ins    = Input(UInt(Instructions.INS_SIZE.W))
+  val in     = new CoreData
+  val out    = Flipped(new CoreData)
+  val ctl    = new Control
+  val pc_sel = Output(Bool())
 }
 
 class DecodeIO extends Bundle {
@@ -17,10 +25,12 @@ class DecodeIO extends Bundle {
 }
 
 class ExecuteIO extends Bundle {
-  val src = Flipped(new RegisterData)
-  val ctl = Flipped(new Control)
-  val imm = Input(SInt(Instructions.WORD_SIZE.W))
-  val alu = new ALUData
+  val src    = Flipped(new RegisterData)
+  val ctl    = Flipped(new Control)
+  val imm    = Input(SInt(Instructions.WORD_SIZE.W))
+  val pc_in  = Input(UInt(Instructions.ARCH_SIZE.W))
+  val pc_out = Output(UInt(Instructions.ARCH_SIZE.W))
+  val alu    = new ALUData
 }
 
 class Decode extends Module {
@@ -36,7 +46,7 @@ class Decode extends Module {
   immgen.io.ctl := ctl.io.ctl.imm
 
   regs.io.data   := io.data
-  regs.io.dst_en := ctl.io.ctl.wb
+  regs.io.dst_en := ctl.io.ctl.wb =/= 0.U /* Write to destination is disabled if 0 */
   regs.io.dst    := io.ins(5,3)
   regs.io.addr0  := io.ins(8,6)
   regs.io.addr1  := io.ins(12,10)
@@ -49,9 +59,49 @@ class Decode extends Module {
 class Execute extends Module {
   val io = IO(new ExecuteIO)
 
-  /* Implement Execute */
+  val alu = Module(new ALU)
+
+  alu.io.ctl  := io.ctl.alu
+  alu.io.src0 := io.src.src0
+  alu.io.src1 := Mux(io.ctl.src1.asBool, io.imm.asUInt, io.src.src1)
+
+  /* Multiply Imm by 2 because PC can never be an odd number */
+  val immShift = (io.imm.asUInt << 1)
+
+  io.alu    <> alu.io.data
+  io.pc_out := Mux(io.ctl.br.asBool,
+    io.pc_in + immShift,
+    io.src.src0 + immShift
+  )
 }
 
-// class Core extends Module {
-//   val io = new CoreIO
-// }
+class Core extends Module {
+  val io = IO(new CoreIO)
+
+  val decode = Module(new Decode)
+  val exec   = Module(new Execute)
+
+  val brReg  = RegInit(false.B)
+
+  decode.io.ins  := io.ins
+  decode.io.data := MuxLookup(io.ctl.wb, 0.U, Seq(
+    Control.WB_ALU  -> exec.io.alu.out,
+    Control.WB_PC   -> (io.in.pc + 2.U),
+    Control.WB_DATA -> io.in.data
+  ))
+
+  exec.io.src <> decode.io.src
+  exec.io.ctl <> decode.io.ctl
+  exec.io.imm   := decode.io.imm
+  exec.io.pc_in := io.in.pc
+
+  /* Delays branch flag for next cycle */
+  brReg := exec.io.alu.br
+
+  io.ctl <> decode.io.ctl
+  io.out.data := exec.io.alu.out
+  io.out.pc   := exec.io.pc_out
+
+  /* Jumps always select computed branch */
+  io.pc_sel   := Mux(io.ins(2,0)===5.U, true.B, brReg)
+}
