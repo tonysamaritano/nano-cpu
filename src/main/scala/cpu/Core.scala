@@ -12,6 +12,7 @@ class CoreOut extends CoreData {
   val addr   = Input(UInt(Instructions.ARCH_SIZE.W))
   val pc_sel = Input(Bool())
   val wr_en  = Input(Bool())
+  val ld_en  = Input(Bool())
 }
 
 class CoreIO extends Bundle {
@@ -36,6 +37,11 @@ class ExecuteIO extends Bundle {
   val pc_out  = Output(UInt(Instructions.ARCH_SIZE.W))
   val ld_word = Output(UInt(Instructions.WORD_SIZE.W))
   val alu     = new ALUData
+}
+
+class LoadControl extends Bundle {
+  val data_valid = Bool()
+  val ins        = UInt(Instructions.INS_SIZE.W)
 }
 
 class Decode extends Module {
@@ -81,7 +87,7 @@ class Execute extends Module {
 
   /* Adds upper and lower 8 bits on subsequent cycles */
   val ld  = RegInit(0.U)
-  ld := Mux(io.ctl.ld.asBool, io.imm.asUInt, 0.U)
+  ld := Mux(io.ctl.ld===Control.LD_IMM, io.imm.asUInt, 0.U)
   io.ld_word := ld + io.imm.asUInt
 }
 
@@ -91,7 +97,11 @@ class Core extends Module {
   val decode = Module(new Decode)
   val exec   = Module(new Execute)
 
-  decode.io.ins  := io.ins
+  val ldCtl  = Reg(new LoadControl)
+
+  /* Load previous instruction when load data is valid. This is because the
+   * previous instruction understands where to load the data into (2 cycle load). */
+  decode.io.ins  := Mux(ldCtl.data_valid, ldCtl.ins, io.ins)
   decode.io.data := MuxLookup(decode.io.ctl.wb, 0.U, Seq(
     Control.WB_ALU  -> exec.io.alu.out,
     Control.WB_PC   -> (io.in.pc + 2.U), /* Stores current pc + 2 during Jump operations */
@@ -104,12 +114,19 @@ class Core extends Module {
   exec.io.imm   := decode.io.imm
   exec.io.pc_in := io.in.pc
 
+  /* We check and see if we have a data load. That needs to be done on the following
+   * cycle because this CPU cannot read and fetch at the same time. Needs to be cleared
+   * afterwards. */
+  ldCtl.data_valid := Mux(ldCtl.data_valid, false.B, decode.io.ctl.ld===Control.LD_DATA)
+  ldCtl.ins        := io.ins
+
   /* Delays branch flag for next cycle */
   val brReg  = RegInit(false.B)
   brReg := exec.io.alu.br
 
   io.out.data := decode.io.src.src1
   io.out.pc   := exec.io.pc_out
+  io.out.ld_en := ldCtl.data_valid
 
   /* Jumps always select computed pc */
   io.out.pc_sel := Mux(io.ins(2,0)===5.U, true.B, brReg)

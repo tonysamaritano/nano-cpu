@@ -79,6 +79,15 @@ object TestPrograms {
     new InstructionValidation("b_0000_0000_1000_0000".U, 1234.U, "Adds x0 and x2 into x0 to check output of x2"),
     new InstructionValidation("b_0010_0100_1000_1011".U, 1236.U, "Store x1 in 2(x2)"),
   )
+
+  var program6 = Array(
+    new InstructionValidation("b_0000_0000_0000_0101".U, 0.U, "Jumps to x0 and stores PC into x0"),
+    new InstructionValidation("b_1100_0101_1000_0010".U, 0.U, "Load Lower to get Imm 1234"),
+    new InstructionValidation("b_0110_1000_0000_1010".U, 0.U, "Load Upper to get Imm 1234 into x1"),
+    new InstructionValidation("b_0011_1110_0101_0010".U, (1234+15).U, "Loads data from 15(x1) into x2"),
+    new InstructionValidation("b_0000_0000_0000_0000".U, (1234+15).U, "NOP for bubble"),
+    new InstructionValidation("b_0000_0000_1000_0000".U, 54321.U, "Adds x0 and x1 into x0 to check output of x1"),
+  )
 }
 
 class TestCore extends Module {
@@ -91,11 +100,13 @@ class TestCore extends Module {
   val core = Module(new Core)
 
   core.io.ins := io.ins
-  core.io.in.data := 0.U
+  core.io.in.data := 54321.U
   core.io.in.pc := pc
 
-  pc := Mux(core.io.out.pc_sel, core.io.out.pc, pc + 2.U)
-
+  /* If we've loaded, we want to restore the previous PC because it
+   * takes 2 cycles to load (von Neumann bottleneck) */
+  pc := Mux(core.io.out.pc_sel, core.io.out.pc,
+    Mux(core.io.out.ld_en,  pc, pc + 2.U))
 
   /* Output of the ALU is the memory address */
   io.out <> core.io.out

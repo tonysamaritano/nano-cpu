@@ -134,7 +134,7 @@ I think this will be a nice, simple way for the processor to be mildly useful.
 |**SRL**|R|`0x6`|src1|`N/A`|src0|dst|`0x1`|
 |**SRLI**|I|`0x7`|imm[`3:1`]|imm[`0`]|src0|dst|`0x1`|
 |LB|I|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
-|LW|I|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
+|**LW**|I|imm[`4`], `0x1`|imm[`3:1`]|imm[`0`]|src0|dst|`0x2`|
 |**LLI**|UU|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x2`|
 |**LUAI**|UUU|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
 |SB|S|imm[`4`], `0x0`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|

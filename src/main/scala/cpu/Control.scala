@@ -53,12 +53,13 @@ object Control {
   def BR_PC           = 1.U(WB_BITWIDTH)
 
   /* Load Control */
-  def LD_BITWIDTH     = 1.W
+  def LD_BITWIDTH     = 2.W
   def LD_XXX          = 0.U(LD_BITWIDTH)
   def LD_IMM          = 1.U(LD_BITWIDTH)
+  def LD_DATA         = 2.U(LD_BITWIDTH)
 
   /* Write Control */
-  def WR_BITWIDTH     = 1.W
+  def WR_BITWIDTH     = 2.W
   def WR_XXX          = 0.U(WR_BITWIDTH)
   def WR_MEMB         = 1.U(WR_BITWIDTH)
   def WR_MEMW         = 2.U(WR_BITWIDTH)
@@ -82,11 +83,11 @@ object Control {
     SRL  -> List(  IMM_RI,  SRC1DP_REG, WB_ALU,  ALU_SRL,  BR_PC,  LD_XXX, WR_XXX),
     SRLI -> List(  IMM_RI,  SRC1DP_IMM, WB_ALU,  ALU_SRL,  BR_PC,  LD_XXX, WR_XXX),
 
-    // LW   -> List(  IMM_I5,  SRC1DP_IMM, WB_ALU, ALU_ADD,  BR_EQ),
-    LLI  -> List(  IMM_UU,  SRC1DP_IMM, WB_XXX,  ALU_ZERO, BR_PC,  LD_IMM, WR_XXX),
-    LUAI -> List(  IMM_UUU, SRC1DP_IMM, WB_WORD, ALU_ZERO, BR_PC,  LD_XXX, WR_XXX),
+    LW   -> List(  IMM_I5,  SRC1DP_IMM, WB_DATA, ALU_ADD,  BR_PC,  LD_DATA, WR_XXX),
+    LLI  -> List(  IMM_UU,  SRC1DP_IMM, WB_XXX,  ALU_ZERO, BR_PC,  LD_IMM,  WR_XXX),
+    LUAI -> List(  IMM_UUU, SRC1DP_IMM, WB_WORD, ALU_ZERO, BR_PC,  LD_XXX,  WR_XXX),
 
-    SW   -> List(  IMM_S,   SRC1DP_IMM, WB_XXX,  ALU_ADD,  BR_PC,  LD_XXX, WR_MEMB),
+    SW   -> List(  IMM_S,   SRC1DP_IMM, WB_XXX,  ALU_ADD,  BR_PC,  LD_XXX, WR_MEMW),
 
     EQ   -> List(  IMM_RI,  SRC1DP_REG, WB_XXX,  ALU_EQ,   BR_PC,  LD_XXX, WR_XXX),
     NEQ  -> List(  IMM_RI,  SRC1DP_REG, WB_XXX,  ALU_NE,   BR_PC,  LD_XXX, WR_XXX),

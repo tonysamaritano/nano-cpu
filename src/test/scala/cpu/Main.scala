@@ -306,6 +306,13 @@ object main extends App {
       c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
+
+    for ((ins, i) <- TestPrograms.program6.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()}")
+      c.io.out.addr.expect(ins.out())
+      c.clock.step(1)
+    }
   }
 
   println("SUCCESS!!")
