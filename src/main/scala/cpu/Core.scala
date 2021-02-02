@@ -8,11 +8,16 @@ class CoreData extends Bundle {
   val data = Input(UInt(Instructions.WORD_SIZE.W))
 }
 
+class CoreOut extends CoreData {
+  val addr   = Input(UInt(Instructions.ARCH_SIZE.W))
+  val pc_sel = Input(Bool())
+  val wr_en  = Input(Bool())
+}
+
 class CoreIO extends Bundle {
   val ins    = Input(UInt(Instructions.INS_SIZE.W))
   val in     = new CoreData
-  val out    = Flipped(new CoreData)
-  val pc_sel = Output(Bool())
+  val out    = Flipped(new CoreOut)
 }
 
 class DecodeIO extends Bundle {
@@ -46,7 +51,7 @@ class Decode extends Module {
   immgen.io.ctl := ctl.io.ctl.imm
 
   regs.io.data   := io.data
-  regs.io.dst_en := ctl.io.ctl.wb =/= 0.U /* Write to destination is disabled if 0 */
+  regs.io.dst_en := ctl.io.ctl.wb.orR
   regs.io.dst    := io.ins(5,3)
   regs.io.addr0  := io.ins(8,6)
   regs.io.addr1  := io.ins(12,10)
@@ -89,7 +94,7 @@ class Core extends Module {
   decode.io.ins  := io.ins
   decode.io.data := MuxLookup(decode.io.ctl.wb, 0.U, Seq(
     Control.WB_ALU  -> exec.io.alu.out,
-    Control.WB_PC   -> (io.in.pc + 2.U),
+    Control.WB_PC   -> (io.in.pc + 2.U), /* Stores current pc + 2 during Jump operations */
     Control.WB_DATA -> io.in.data,
     Control.WB_WORD -> exec.io.ld_word
   ))
@@ -103,9 +108,11 @@ class Core extends Module {
   val brReg  = RegInit(false.B)
   brReg := exec.io.alu.br
 
-  io.out.data := exec.io.alu.out
+  io.out.data := decode.io.src.src1
   io.out.pc   := exec.io.pc_out
 
   /* Jumps always select computed pc */
-  io.pc_sel   := Mux(io.ins(2,0)===5.U, true.B, brReg)
+  io.out.pc_sel := Mux(io.ins(2,0)===5.U, true.B, brReg)
+  io.out.addr   := exec.io.alu.out
+  io.out.wr_en  := decode.io.ctl.wr.orR
 }

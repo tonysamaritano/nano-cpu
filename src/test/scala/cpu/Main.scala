@@ -271,31 +271,39 @@ object main extends App {
   }
 
   test(new TestCore) { c =>
+    /* NOTE: c.io.out.addr is the output to the ALU */
     for ((ins, i) <- TestPrograms.program1.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
-      c.io.out.expect(ins.out())
+      c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
     for ((ins, i) <- TestPrograms.program2.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
-      c.io.out.expect(ins.out())
+      c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
     for ((ins, i) <- TestPrograms.program3.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
-      c.io.out.expect(ins.out())
+      c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
     for ((ins, i) <- TestPrograms.program4.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
-      c.io.out.expect(ins.out())
+      c.io.out.addr.expect(ins.out())
+      c.clock.step(1)
+    }
+
+    for ((ins, i) <- TestPrograms.program5.zipWithIndex) {
+      c.io.ins.poke(ins.ins())
+      println(s"${i}: ${ins.desc()}")
+      c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
   }

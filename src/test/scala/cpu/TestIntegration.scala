@@ -68,12 +68,23 @@ object TestPrograms {
     new InstructionValidation("b_1111_1110_1100_1010".U, 0.U, "Load Upper Imm 127 and store in x1"),
     new InstructionValidation("b_0000_0000_0100_0000".U, 32767.U, "Adds x0 and x1 into x0 to check output of x1"),
   )
+
+  var program5 = Array(
+    new InstructionValidation("b_0000_0000_0000_0101".U, 0.U, "Jumps to x0 and stores PC into x0"),
+    new InstructionValidation("b_1101_1111_1100_0010".U, 0.U, "Load Lower Imm 255"),
+    new InstructionValidation("b_1111_1111_1100_1010".U, 0.U, "Load Upper Imm 255 and store in x1"),
+    new InstructionValidation("b_0000_0000_0100_0000".U, 65535.U, "Adds x0 and x1 into x0 to check output of x1"),
+    new InstructionValidation("b_1100_0101_1000_0010".U, 0.U, "Load Lower to get Imm 1234"),
+    new InstructionValidation("b_0110_1000_0001_0010".U, 0.U, "Load Upper to get Imm 1234 into x2"),
+    new InstructionValidation("b_0000_0000_1000_0000".U, 1234.U, "Adds x0 and x2 into x0 to check output of x2"),
+    new InstructionValidation("b_0010_0100_1000_1011".U, 1236.U, "Store x1 in 2(x2)"),
+  )
 }
 
 class TestCore extends Module {
   val io = IO(new Bundle {
     val ins = Input(UInt(Instructions.INS_SIZE.W))
-    val out = Output(UInt(Instructions.WORD_SIZE.W))
+    val out = Flipped(new CoreOut)
   })
 
   val pc   = RegInit(0.U(Instructions.ARCH_SIZE.W))
@@ -83,8 +94,9 @@ class TestCore extends Module {
   core.io.in.data := 0.U
   core.io.in.pc := pc
 
-  pc := Mux(core.io.pc_sel, core.io.out.pc, pc + 2.U)
+  pc := Mux(core.io.out.pc_sel, core.io.out.pc, pc + 2.U)
 
 
-  io.out := core.io.out.data
+  /* Output of the ALU is the memory address */
+  io.out <> core.io.out
 }

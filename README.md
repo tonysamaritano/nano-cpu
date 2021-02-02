@@ -138,7 +138,7 @@ I think this will be a nice, simple way for the processor to be mildly useful.
 |**LLI**|UU|imm[`4`], `0x2`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|`N/A`|`0x2`|
 |**LUAI**|UUU|imm[`4`], `0x3`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|dst|`0x2`|
 |SB|S|imm[`4`], `0x0`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
-|SW|S|imm[`4`], `0x1`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
+|**SW**|S|imm[`4`], `0x1`|src1|imm[`0`]|src0|imm[`3:1`]|`0x3`|
 |**EQ**|C|`0x0`|src1|`N/A`|src0|`N/A`|`0x4`|
 |**NEQ**|C|`0x1`|src1|`N/A`|src0|`N/A`|`0x4`|
 |**GE**|C|`0x2`|src1|`N/A`|src0|`N/A`|`0x4`|
