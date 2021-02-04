@@ -270,47 +270,111 @@ object main extends App {
     c.io.imm.expect(1023.S)
   }
 
+  test(new MagicMemory(1024)) { c =>
+    val dataFill = Array.range(0, 511)
+
+    for((data, i) <- dataFill.zipWithIndex)
+    {
+      c.io.write.addr.poke((i*2).U)
+      c.io.write.data.poke(data.U)
+      c.io.write.we.poke(false.B)
+      c.clock.step(1)
+    }
+
+    for((data, i) <- dataFill.zipWithIndex)
+    {
+      c.io.write.addr.poke((i*2).U)
+      c.io.read.data.expect(0.U)
+      c.clock.step(1)
+    }
+
+    for((data, i) <- dataFill.zipWithIndex)
+    {
+      c.io.write.addr.poke((i*2).U)
+      c.io.write.data.poke(data.U)
+      c.io.write.we.poke(true.B)
+      c.clock.step(1)
+      c.io.read.addr.poke((i*2).U)
+      c.io.read.data.expect(data.U)
+      c.clock.step(1)
+    }
+  }
+
   test(new TestCore) { c =>
     /* NOTE: c.io.out.addr is the output to the ALU */
-    for ((ins, i) <- TestPrograms.program1.zipWithIndex) {
+    for ((ins, i) <- CoreTestPrograms.program1.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
       c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
-    for ((ins, i) <- TestPrograms.program2.zipWithIndex) {
+    for ((ins, i) <- CoreTestPrograms.program2.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
       c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
-    for ((ins, i) <- TestPrograms.program3.zipWithIndex) {
+    for ((ins, i) <- CoreTestPrograms.program3.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
       c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
-    for ((ins, i) <- TestPrograms.program4.zipWithIndex) {
+    for ((ins, i) <- CoreTestPrograms.program4.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
       c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
-    for ((ins, i) <- TestPrograms.program5.zipWithIndex) {
+    for ((ins, i) <- CoreTestPrograms.program5.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
       c.io.out.addr.expect(ins.out())
       c.clock.step(1)
     }
 
-    for ((ins, i) <- TestPrograms.program6.zipWithIndex) {
+    for ((ins, i) <- CoreTestPrograms.program6.zipWithIndex) {
       c.io.ins.poke(ins.ins())
       println(s"${i}: ${ins.desc()}")
       c.io.out.addr.expect(ins.out())
+      c.clock.step(1)
+    }
+  }
+
+  test(new TestProcessor) { c =>
+    /* Program load */
+    for((ins, i) <- Programs.program_42.zipWithIndex)
+    {
+      c.io.mem.addr.poke((i*2).U)
+      c.io.mem.data.poke(ins.ins())
+      c.io.mem.we.poke(true.B)
+      c.clock.step(1)
+    }
+
+    /* Program execution */
+    c.io.mem.we.poke(false.B)
+    for((ins, i) <- Programs.program_42.zipWithIndex)
+    {
+      c.clock.step(1)
+    }
+
+    /* Program load */
+    for((ins, i) <- Programs.program_soft_mul.zipWithIndex)
+    {
+      c.io.mem.addr.poke((i*2).U)
+      c.io.mem.data.poke(ins.ins())
+      c.io.mem.we.poke(true.B)
+      c.clock.step(1)
+    }
+
+    /* Program execution */
+    c.io.mem.we.poke(false.B)
+    for(i <- 0 to 40)
+    {
       c.clock.step(1)
     }
   }

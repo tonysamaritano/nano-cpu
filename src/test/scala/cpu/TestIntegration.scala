@@ -10,7 +10,7 @@ class InstructionValidation(ins: UInt, out: UInt, desc: String) extends Instruct
   def out() : UInt = out
 }
 
-object TestPrograms {
+object CoreTestPrograms {
   var program1 = Array(
     new InstructionValidation("b_0000_0000_0011_1101".U, 0.U, "Jumps to x0 and stores PC into x7"),
     new InstructionValidation("b_0010_1110_0000_1000".U, "b_0111".U, "Adds x0 and imm (7) into x1"),
@@ -90,6 +90,30 @@ object TestPrograms {
   )
 }
 
+object Programs {
+  var program_42 = Array(
+    new InstructionValidation("b_0010_1110_0000_1000".U, 0.U, "Adds x0 and imm (7) into x1"),
+    new InstructionValidation("b_1010_0100_0100_1001".U, 0.U, "Shift x1 by 2 to multiply by 4 and store back in x1"),
+    new InstructionValidation("b_0010_1110_0001_0000".U, 0.U, "Adds x0 and imm (7) into x2"),
+    new InstructionValidation("b_1010_0010_1001_0001".U, 0.U, "Shift x2 by 1 to multiply by 2 and store back in x2"),
+    new InstructionValidation("b_0000_1000_0101_1000".U, 0.U, "Adds x1 and x2 into x3"),
+    new InstructionValidation("b_0010_1100_0000_0011".U, 0.U, "Store x3 in 0(x0)"),
+  )
+
+  var program_soft_mul = Array(
+    new InstructionValidation("b_0010_1110_0000_1000".U, 0.U, "Adds x0 and imm (7) into x1"),
+    new InstructionValidation("b_0010_1100_0001_0000".U, 0.U, "Adds x0 and imm (6) into x2"),
+    new InstructionValidation("b_1010_1010_1001_0001".U, 0.U, "Shift x2 by 5 to multiply by 32 and store back in x2"),
+    new InstructionValidation("b_0000_0000_0001_1000".U, 0.U, "Adds x0 and imm (0) into x3"),
+    new InstructionValidation("b_0011_1110_1001_0000".U, 0.U, "Adds x2 and imm (-1) into x2"),
+    new InstructionValidation("b_0000_1100_1001_1000".U, 0.U, "Adds x2 and x3 into x3"),
+    new InstructionValidation("b_0011_1110_0100_1000".U, 0.U, "Adds x1 and imm (-1) into x1"),
+    new InstructionValidation("b_0010_0000_0100_0100".U, 0.U, "Checks if x1 != x0"),
+    new InstructionValidation("b_1001_1011_1111_1011".U, 0.U, "BR PC-6"),
+    new InstructionValidation("b_0010_1100_0000_0011".U, 0.U, "Store x3 in 0(x0)"),
+  )
+}
+
 class TestCore extends Module {
   val io = IO(new Bundle {
     val ins = Input(UInt(Instructions.INS_SIZE.W))
@@ -110,4 +134,29 @@ class TestCore extends Module {
 
   /* Output of the ALU is the memory address */
   io.out <> core.io.out
+}
+
+class TestProcessor extends Module {
+  val io = IO(new Bundle {
+    /* For program loading */
+    val mem = new MagicMemoryIn
+  })
+
+  val cpu = Module(new Processor)
+  val mem = Module(new MagicMemory(1024))
+
+  cpu.io.mem <> mem.io
+
+  /* Print when the processor writes to memory */
+  when (cpu.io.mem.write.we) {
+    printf(p"Mem[${cpu.io.mem.write.addr}] = ${cpu.io.mem.write.data}\n")
+  }
+
+  /* Reset the processor while loading program into memory */
+  cpu.io.reset := io.mem.we
+
+  /* Program loading */
+  when (io.mem.we) {
+    mem.io.write <> io.mem
+  }
 }
