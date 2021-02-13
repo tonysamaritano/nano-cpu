@@ -8,3 +8,4 @@ addi x1, x1, -1     // decrement x1
 neq  x1, x0         // x1 != 0
 br   -3             // branch if true
 sw   x0, x3, 0      // store x3 in 0(x0)
+hlt  x0, x0, x0     // Halt

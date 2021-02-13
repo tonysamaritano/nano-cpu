@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
         i = i + 2;
     }
 
-    for (int i=0; i<program.size()+30; i++)
+    while (!top.io_halt)
     {
         top.io_mem_read_data = memory[top.io_mem_read_addr];
         top.step();

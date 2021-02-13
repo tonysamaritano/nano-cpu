@@ -99,6 +99,8 @@ object Control {
     JALR -> List(  IMM_I5,  SRC1DP_IMM, WB_PC,   ALU_ZERO, BR_REG, LD_XXX, WR_XXX),
     JAL  -> List(  IMM_U,   SRC1DP_IMM, WB_PC,   ALU_ZERO, BR_PC,  LD_XXX, WR_XXX),
     BR   -> List(  IMM_B,   SRC1DP_IMM, WB_XXX,  ALU_ZERO, BR_PC,  LD_XXX, WR_XXX),
+
+    HLT  -> List(  IMM_RI,  SRC1DP_REG, WB_XXX,  ALU_ZERO, BR_PC,  LD_XXX, WR_XXX),
   )
 }
 
@@ -110,6 +112,7 @@ class Control extends Bundle {
   val br   = Output(UInt(Control.BR_BITWIDTH))
   val ld   = Output(UInt(Control.LD_BITWIDTH))
   val wr   = Output(UInt(Control.WR_BITWIDTH))
+  val halt = Output(Bool())
 }
 
 class Controller extends Module {
@@ -127,4 +130,7 @@ class Controller extends Module {
   io.ctl.br   := ctrlSignals(4) /* Branch Source */
   io.ctl.ld   := ctrlSignals(5) /* Load Control */
   io.ctl.wr   := ctrlSignals(6) /* Write Control */
+
+  /* Halt Ins */
+  io.ctl.halt := (io.ins(2,0) === 7.U(3.W)) && (io.ins(15,13) === 7.U(3.W))
 }

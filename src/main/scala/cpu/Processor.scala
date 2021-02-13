@@ -5,6 +5,7 @@ import chisel3._
 class Processor extends Module {
   val io = IO(new Bundle {
     val mem   = Flipped(new MagicMemoryInterface)
+    val halt  = Output(Bool())
   })
 
   val pc   = RegInit(0.U(Instructions.ARCH_SIZE.W))
@@ -29,4 +30,6 @@ class Processor extends Module {
   io.mem.write.we := core.io.out.wr_en
   io.mem.write.addr := core.io.out.addr
   io.mem.write.data := core.io.out.data
+
+  io.halt := core.io.out.halt
 }

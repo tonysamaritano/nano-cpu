@@ -211,7 +211,7 @@ class InstructionFactory:
         "jalr": ("I5",  0x5,      0x0),
         "jal":  ("U",   0x5,      0x1),
         "br":   ("B",   0x6,      0x0),
-        # "hlt":  ("R",   0x7,      0x7), Unimplemented
+        "hlt":  ("R",   0x7,      0x7),
     }
 
     Operands = {

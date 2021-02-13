@@ -13,6 +13,7 @@ class CoreOut extends CoreData {
   val pc_sel = Input(Bool())
   val wr_en  = Input(Bool())
   val ld_en  = Input(Bool())
+  val halt   = Input(Bool())
 }
 
 class CoreIO extends Bundle {
@@ -27,6 +28,7 @@ class DecodeIO extends Bundle {
   val ctl  = new Control
   val src  = new RegisterData
   val imm  = Output(SInt(Instructions.WORD_SIZE.W))
+  val halt = Output(Bool())
 }
 
 class ExecuteIO extends Bundle {
@@ -65,6 +67,7 @@ class Decode extends Module {
   io.ctl <> ctl.io.ctl
   io.src <> regs.io.out
   io.imm := immgen.io.imm
+  io.halt := io.ctl.halt
 }
 
 class Execute extends Module {
@@ -132,4 +135,5 @@ class Core extends Module {
   io.out.pc_sel := Mux(io.ins(2,0)===5.U, true.B, brReg)
   io.out.addr   := exec.io.alu.out
   io.out.wr_en  := decode.io.ctl.wr.orR
+  io.out.halt   := decode.io.halt
 }
