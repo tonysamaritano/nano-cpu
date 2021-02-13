@@ -153,7 +153,7 @@ class TestProcessor extends Module {
   }
 
   /* Reset the processor while loading program into memory */
-  cpu.io.reset := io.mem.we
+  cpu.reset := io.mem.we
 
   /* Program loading */
   when (io.mem.we) {

@@ -16,6 +16,8 @@ class ALU extends Module {
     val data  = new ALUData
   })
 
+  val shift = io.src1(3,0).asUInt
+
   /* Lookup the operation to execute */
   io.data.out := MuxLookup(io.ctl, 0.U, Seq(
     Control.ALU_ADD -> (io.src0 + io.src1),
@@ -24,8 +26,8 @@ class ALU extends Module {
     Control.ALU_OR  -> (io.src0 | io.src1),
     Control.ALU_XOR -> (io.src0 ^ io.src1),
     Control.ALU_NOT -> (~io.src0),
-    Control.ALU_SLL -> (io.src0 << io.src1),
-    Control.ALU_SRL -> (io.src0 >> io.src1),
+    Control.ALU_SLL -> (io.src0 << shift),
+    Control.ALU_SRL -> (io.src0 >> shift),
   ))
 
   /* Figure out whether or not to branch */
