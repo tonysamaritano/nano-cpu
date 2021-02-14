@@ -129,7 +129,7 @@ class Core extends Module {
 
   io.out.data := decode.io.src.src1
   io.out.pc   := exec.io.pc_out
-  io.out.ld_en := ldCtl.data_valid
+  io.out.ld_en := Mux(ldCtl.data_valid, decode.io.ctl.ld===Control.LD_DATA, false.B)
 
   /* Jumps always select computed pc */
   io.out.pc_sel := Mux(io.ins(2,0)===5.U, true.B, brReg)

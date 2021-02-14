@@ -26,7 +26,7 @@ class Processor extends Module {
     pc := pc + 2.U
   }
 
-  io.mem.read.addr := pc
+  io.mem.read.addr := Mux(core.io.out.ld_en, core.io.out.addr, pc)
   io.mem.write.we := core.io.out.wr_en
   io.mem.write.addr := core.io.out.addr
   io.mem.write.data := core.io.out.data
