@@ -1,7 +1,7 @@
 .data
 
-//msg:
-//    .string "Hello!\n"
+msg:
+    .string "Hello!\n"
 
 life:
     .word 42
@@ -13,23 +13,28 @@ balls:
     global _start
 
 soft_mul:
-    add     s0, x0, x0     // initialize s0 to 0 for return value
-    addi    a0, a0, -1     // decrement a0
-    add     s0, s0, a1     // accumulate s0 by a1
-    neq     a0, x0         // x1 != 0
-    br      -3             // branch if true
-    jalr    x0, 0(ra)      // unconditional jump back to return address
+    add     s0, x0, x0      // initialize s0 to 0 for return value
+    addi    a0, a0, -1      // decrement a0
+    add     s0, s0, a1      // accumulate s0 by a1
+    neq     a0, x0          // x1 != 0
+    br      -3              // branch if true
+    jalr    x0, 0(ra)       // unconditional jump back to return address
 
 output_42:
-    lw      t0, life       // load data 'life' from memory
-    sw      x0, 0(t0)      // store life to 0
-    jalr    x0, 0(ra)      // unconditional jump back to return address
+    lw      t0, life        // load data 'life' from memory
+    sw      x0, 0(t0)       // store life to 0
+    jalr    x0, 0(ra)       // unconditional jump back to return address
 
 store_far:
-    lli     255            // loads 0xff into lower byte
-    luai    t0, 128        // load 0x80 into up to create 0x80ff
-    lw      t1, balls      // Stores 'balls' in t1
-    sw      t0, 0(t1)      // stores t1 in 0x80ff
+    lli     255             // loads 0xff into lower byte
+    luai    t0, 128         // load 0x80 into up to create 0x80ff
+
+    // Stores 'balls' location in a1
+    lli     balls
+    luai    t1, 0
+    lw      a1, 0(t1)
+
+    sw      t0, 0(a1)
     jalr    x0, 0(ra)      // unconditional jump back to return address
 
 _start:

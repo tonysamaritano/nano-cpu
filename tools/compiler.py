@@ -69,8 +69,12 @@ class Instruction:
         a = a | (val << 15)
         return array.array('B', struct.pack('<H', a))
 
-    def _convertImm(self, bitwidth):
-        r = (1 << bitwidth)
+    def _convertImm(self, bitwidth, signed=True):
+        if signed:
+            r = (1 << (bitwidth-1))
+        else:
+            r = (1 << bitwidth)
+
         assert self._imm > -r and self._imm < r, f"Imm is too big. Imm -{r} < {self._imm} < {r}"
         val = abs(self._imm)
         imm = val
@@ -128,8 +132,8 @@ class InstructionU(Instruction):
 
         return self._packImm(b)
 
-    def _packImm(self, b):
-        signedImm = self._convertImm(bitwidth=8)
+    def _packImm(self, b, signed=True):
+        signedImm = self._convertImm(bitwidth=8, signed=signed)
 
         b = self._insertFunct1(b, signedImm & 0x1)
         b = self._insertSrc1(b, (signedImm >> 1) & 0x7)
@@ -141,7 +145,14 @@ class InstructionU(Instruction):
 class InstructionUU(InstructionU):
     def toBinary(self):
         b = Instruction.toBinary(self)
-        return self._packImm(b)
+        return self._packImm(b, False)
+
+class InstructionUUU(InstructionU):
+    def toBinary(self):
+        b = Instruction.toBinary(self)
+        b = self._packDst(b)
+
+        return self._packImm(b, False)
 
 class InstructionC(Instruction):
     def toBinary(self):
@@ -199,7 +210,7 @@ class InstructionFactory:
         # "lb":   ("I5",  0x2,      0x0), Unimplemented
         "lw":   ("I5",  0x2,      0x1),
         "lli":  ("UU",  0x2,      0x2),
-        "luai": ("U",   0x2,      0x3),
+        "luai": ("UUU", 0x2,      0x3),
         # "sb":   ("S",   0x3,      0x0), Unimplemented
         "sw":   ("S",   0x3,      0x1),
         "eq":   ("C",   0x4,      0x0),
@@ -241,7 +252,7 @@ class InstructionFactory:
             assert len(ops)==1, "UU type must have 1 operands"
             I.setOperands(
                 imm=ops[0])
-        elif opcode[0]=="U":
+        elif opcode[0]=="U" or opcode[0]=="UUU":
             assert len(ops)==2, "U type must have 2 operands"
             I.setOperands(
                 dst=ops[0],
@@ -272,6 +283,8 @@ class InstructionFactory:
             ins.__class__ = InstructionU
         elif ins.getType()=="UU":
             ins.__class__ = InstructionUU
+        elif ins.getType()=="UUU":
+            ins.__class__ = InstructionUUU
         elif ins.getType()=="C":
             ins.__class__ = InstructionC
         elif ins.getType()=="B":
@@ -378,6 +391,10 @@ class WordDataItem(DataItem):
 
 class StringDataItem(DataItem):
     def toBytes(self):
+        assert "\"" in self._value
+        self._value = self._value.split("\"")[1].lstrip().rstrip()
+        self._value = self._value.replace("\\n", "\n")
+        self._value += "\0"
         return array.array('B', struct.pack(f'{len(self._value)}s', self._value.encode('utf-8')))
 
 class Assembler(Stage):
@@ -497,6 +514,8 @@ class Linker(Stage):
                         # TODO: This is a hack, need a better way of handling this
                         if "jal " in i:
                             i = i.replace(link, f"{int((links[link]-mem)/2)}")
+                        elif "lli " in i:
+                            i = i.replace(link, f"{links[link]}")
                         else:
                             i = i.replace(link, f"{links[link]}(x0)")
 
