@@ -41,8 +41,8 @@ public:
 
     void step() final
     {
-        if(io_mem_write_we || true){
-            printf("R: Mem[%2u] 0x%04X\tW: En: %s mem[%u]: %u\n",
+        if(io_mem_write_we){
+            printf("R: Mem[0x%02X] 0x%04X\tW: En: %s mem[%u]: %u\n",
                 io_mem_read_addr,
                 io_mem_read_data,
                 io_mem_write_we ? "Yes" : " No",

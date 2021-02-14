@@ -242,7 +242,7 @@ class InstructionFactory:
             I.setOperands(
                 imm=ops[0])
         elif opcode[0]=="U":
-            assert len(ops)==2, "UUU type must have 2 operands"
+            assert len(ops)==2, "U type must have 2 operands"
             I.setOperands(
                 dst=ops[0],
                 imm=ops[1])
@@ -294,6 +294,14 @@ class InstructionFactory:
                 ops.append(InstructionFactory.Operands[op])
             elif InstructionFactory._isNumber(op):
                 ops.append(int(op))
+            elif InstructionFactory._isRelative(op):
+                split = op.split("(")
+                imm = split[0]
+                reg = split[1].split(")")[0]
+
+                if (reg in InstructionFactory.Operands and InstructionFactory._isNumber(imm)):
+                    ops.append(InstructionFactory.Operands[reg])
+                    ops.append(int(imm))
 
         return ops
 
@@ -305,43 +313,220 @@ class InstructionFactory:
         except:
             return False
 
-factory = InstructionFactory()
+    @staticmethod
+    def _isRelative(val):
+        if "(" in val and ")" in val:
+            return True
+        else:
+            return False
 
-# ins = [
-#     "add    x1, x2, x3      // poop",
-#     "addi   x3, x7, -1       // poop",
-#     "sub    x1, x2, x6      // shit",
-#     "and    x1, x5, t1      // balls",
-#     "op     x1, x5, t1      // balls",
-#     "xor    x1, x5, t1      // balls",
-#     "not    x1, x5, t1      // balls",
-#     "sll    x1, x5, t1      // balls",
-#     "slli   x1, x5, -7      // balls",
-#     "srl    x1, x5, t1      // balls",
-#     "srli   x1, x5, -2      // balls",
-#     "lw     x1, x5, -1     // balls",
-#     "lli    -1             // balls",
-#     "luai   x2, -1         // balls",
-#     "sw     x3, x4, 255     // balls",
-#     "eq     x3, x4          // balls",
-#     "neq    x3, x4          // balls",
-#     "ge     x3, x4          // balls",
-#     "geu    x3, x4          // balls",
-#     "lt     x3, x4          // balls",
-#     "ltu    x3, x4          // balls",
-#     "jalr   x1, x5, -1      // balls",
-#     "jal    x1, -1          // balls",
-#     "br     -1             // balls",
-# ]
+class Stage():
+    def execute(self):
+        return "No File"
 
-asm = open(args.asm, "r")
-output = open(f"{args.bin}", "wb")
+class PreProcessor(Stage):
+    def __init__(self, file):
+        self._file = file
 
-for i in asm:
-    I = factory.create(i)
-    b = I.toBinary()
-    # print(f'{hex(b[1])} {hex(b[0])} = {I}')
-    output.write(b)
+    def execute(self):
+        outfile = self._file.split("/")[-1:][0].split(".")[0] + ".s"
+        out = open(outfile, "w")
+        asm = open(self._file, "r")
 
-asm.close()
-output.close()
+        for line in asm:
+            l = line.split("//")[0].rstrip()
+            if len(l) > 0:
+                out.write(l + '\n')
+
+        out.close()
+        asm.close()
+
+        return outfile
+
+class Subroutine():
+    def __init__(self, name):
+        self._name = name
+        self._routine = []
+
+    def addInstruction(self, ins):
+        self._routine.append(ins.lstrip())
+
+    def getRoutine(self):
+        return self._routine
+
+    def __str__(self):
+        out = f"Subroutine {self._name}:"
+        for ins in self._routine:
+            out += f"\n  {ins}"
+
+        return out
+
+class DataItem():
+    def __init__(self, name, value):
+        self._name = name
+        self._value = value
+
+    def toBytes(self):
+        pass
+
+    def __str__(self):
+        return f"{self._name} = {self._value}"
+
+class WordDataItem(DataItem):
+    def toBytes(self):
+        return array.array('B', struct.pack('<H', int(self._value)))
+
+class StringDataItem(DataItem):
+    def toBytes(self):
+        return array.array('B', struct.pack(f'{len(self._value)}s', self._value.encode('utf-8')))
+
+class Assembler(Stage):
+    Sections = [
+        ".data",
+        ".text",
+    ]
+
+    TextKeywords = [
+        "global"
+    ]
+
+    DataKeywords = [
+        ".word",
+        ".string",
+    ]
+
+    def __init__(self, file):
+        self._file = file
+        self._currentSection = None
+        self._currentSubroutine = None
+        self._subroutines = dict()
+        self._currentDataitem = None
+        self._dataitems = dict()
+        self._entry = None
+
+    def execute(self):
+        asm = open(self._file, "r")
+
+        for line in asm:
+            if line.rstrip() in Assembler.Sections:
+                self._currentSection = line.rstrip()
+                continue
+
+            if self._currentSection in Assembler.Sections[0]:
+                self._processDataSection(line.rstrip())
+            if self._currentSection in Assembler.Sections[1]:
+                self._processTextSection(line.rstrip())
+
+        asm.close()
+
+        return None
+
+    def _processTextSection(self, line):
+        # This is a hack to find global
+        if Assembler.TextKeywords[0] in line:
+            self._currentSubroutine = None
+            self._entry = line.lstrip().split(" ")[1]
+            return
+
+        if line[0].isspace() and self._currentSubroutine is not None:
+            self._subroutines[self._currentSubroutine].addInstruction(line.lstrip())
+        else:
+            sr = line.split(':')[0]
+            self._subroutines[sr] = Subroutine(sr)
+            self._currentSubroutine = sr
+
+    def _processDataSection(self, line):
+        if line[0].isspace():
+            dataItem = line.lstrip().split(" ")
+            dataType = dataItem[0]
+
+            if ".word" in dataType:
+                self._dataitems[self._currentDataitem] = WordDataItem(self._currentDataitem, dataItem[1])
+            elif ".string" in dataType:
+                self._dataitems[self._currentDataitem] = StringDataItem(self._currentDataitem, dataItem[1])
+
+            self._currentDataitem = None
+        else:
+            self._currentDataitem = line.split(":")[0]
+
+    def getDataItems(self):
+        return self._dataitems
+
+    def getSubroutines(self):
+        return self._subroutines
+
+    def getEntry(self):
+        return self._entry
+
+class Linker(Stage):
+    def __init__(self, assembler, output):
+        self._assembler = assembler
+        self._output = output
+
+    def execute(self):
+        factory = InstructionFactory()
+        entry = self._assembler.getEntry()
+        entryLocation = 0
+        subroutines = self._assembler.getSubroutines()
+        dataitems = self._assembler.getDataItems()
+        links = {}
+
+        output = open(f"{self._output}", "wb")
+
+        # Write Header
+        output.write(array.array('B', struct.pack('<H', 0)))
+        output.write(array.array('B', struct.pack('<H', 0)))
+        output.write(array.array('B', struct.pack('<H', 0)))
+        mem = 6 # start at 6th byte
+
+        for d in dataitems:
+            data = dataitems[d].toBytes()
+            output.write(data)
+            links[d] = mem
+            mem += len(data)
+
+        for key in subroutines:
+            links[key] = mem
+
+            if key == entry:
+                entryLocation = mem
+
+            for i in subroutines[key].getRoutine():
+                for link in links:
+                    if link in i:
+                        # TODO: This is a hack, need a better way of handling this
+                        if "jal " in i:
+                            i = i.replace(link, f"{int((links[link]-mem)/2)}")
+                        else:
+                            i = i.replace(link, f"{links[link]}(x0)")
+
+                mem += 2
+
+                I = factory.create(i)
+                output.write(I.toBinary())
+
+        # Go back to the beginning to write initial jump
+        output.seek(0)
+        I = factory.create(f"jal x0, {int(entryLocation/2)}")
+        output.write(I.toBinary())
+
+        output.close()
+        return None
+
+# The preprocessor strips the file and prepares it for the assembler
+pp = PreProcessor(args.asm)
+
+# The assembler organizes all sections and gets them ready for the linker
+ap = Assembler(pp.execute())
+ap.execute()
+
+# I really don't like the way I did the linker.. The others take in a file
+# and this should conform to that as method as well, but I got lazy. The
+# Linker takes the sections, subroutines, data and then links everything
+# together.
+ln = Linker(ap, args.bin)
+ln.execute()
+
+# TODO: The jumps are all relative which will be a problem if the jumps
+# are too far. The linker need to replace near relative jumps with far
+# jumps to memory
