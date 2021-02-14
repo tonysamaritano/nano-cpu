@@ -388,6 +388,11 @@ class StringDataItem(DataItem):
         self._value = self._value.split("\"")[1].lstrip().rstrip()
         self._value = self._value.replace("\\n", "\n")
         self._value += "\0"
+
+        # Make sure that the string is byte aligned to 2 by padding 0
+        if len(self._value) % 2 == 1:
+            self._value += "\0"
+
         return array.array('B', struct.pack(f'{len(self._value)}s', self._value.encode('utf-8')))
 
 class Assembler():
@@ -397,7 +402,7 @@ class Assembler():
     ]
 
     TextKeywords = [
-        "global"
+        "entry"
     ]
 
     DataKeywords = [
@@ -430,9 +435,10 @@ class Assembler():
         return None
 
     def _processTextSection(self, line):
-        # This is a hack to find global
+        # This is a hack to find entry
         if Assembler.TextKeywords[0] in line:
             self._currentSubroutine = None
+            assert self._entry is None, "entry has already been set, you cannot have two or more entries"
             self._entry = line.lstrip().split(" ")[1]
             return
 
@@ -491,7 +497,6 @@ class Linker():
             data = dataitems[d].toBytes()
             output.write(data)
             links[d] = mem
-            print(f"{links[d]} {d} {len(data)}")
             mem += len(data)
 
         for key in subroutines:
@@ -511,7 +516,6 @@ class Linker():
                         else:
                             i = i.replace(link, f"{links[link]}(x0)")
 
-                print(f"{hex(mem)} {i}")
                 mem += 2
 
                 I = factory.create(i)

@@ -52,10 +52,12 @@ build-cpu:
 
 all: compile-verilog verilate build-cpu
 
+.PHONY: examples/subroutine
+
 # Programs
 examples/subroutine:
 	mkdir -p ${BIN_DIR}
 	python3 tools/compiler.py \
-		--asm examples/math.asm \
-		--asm examples/subroutine.asm \
+		--asm examples/subroutine/math.asm \
+		--asm examples/subroutine/subroutine.asm \
 		--bin ${BIN_DIR}/subroutine.bin

@@ -19,6 +19,7 @@ static std::vector<uint16_t> program0 = {
     0b1010001010010001,
     0b0000100001011000,
     0b0010110000000011,
+    0b1110110000000111,
 };
 
 static std::vector<uint16_t> program1 = {
@@ -32,16 +33,19 @@ static std::vector<uint16_t> program1 = {
     0b0010000001000100,
     0b1001101111111011,
     0b0010110000000011,
+    0b1110110000000111,
 };
 
 class Processor : public Module<VProcessor>
 {
 public:
-    Processor(std::string tracefile) : Module(tracefile) {}
+    Processor(std::string tracefile, int verbosity = 0) :
+        Module(tracefile),
+        m_verbosity(verbosity) {}
 
     void step() final
     {
-        if(io_mem_write_we){
+        if ((io_mem_write_we && m_verbosity > 0) || m_verbosity > 1) {
             printf("R: Mem[0x%02X] 0x%04X\tW: En: %s mem[%u]: %u\n",
                 io_mem_read_addr,
                 io_mem_read_data,
@@ -52,6 +56,9 @@ public:
 
         Module<VProcessor>::step();
     }
+
+private:
+    int m_verbosity = 0;
 };
 
 int main(int argc, char *argv[]) {
@@ -59,7 +66,7 @@ int main(int argc, char *argv[]) {
 
     char c;
     int verbosity = 0;
-    std::string bin, tracefile = "test.gtk";
+    std::string bin, tracefile;
     while ((c = getopt (argc, argv, "vb:t:")) != -1)
     {
         switch (c)
@@ -79,7 +86,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Initialize the top level CPU */
-    Processor top(tracefile);
+    Processor top(tracefile, verbosity);
 
     /* Initialize Memory */
     Memory<uint16_t> memory(1024);
