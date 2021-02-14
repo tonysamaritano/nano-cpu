@@ -53,14 +53,9 @@ build-cpu:
 all: compile-verilog verilate build-cpu
 
 # Programs
-examples/loop:
-	mkdir -p ${BIN_DIR}
-	python3 tools/compiler.py \
-		--asm examples/loop.asm \
-		--bin ${BIN_DIR}/loop.bin
-
 examples/subroutine:
 	mkdir -p ${BIN_DIR}
 	python3 tools/compiler.py \
+		--asm examples/math.asm \
 		--asm examples/subroutine.asm \
 		--bin ${BIN_DIR}/subroutine.bin

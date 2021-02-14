@@ -4,7 +4,7 @@ import array
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--asm', help='assembly file')
+parser.add_argument('-a', '--asm', action='append', help='assembly files')
 parser.add_argument('--bin', help='output bin file')
 
 args = parser.parse_args()
@@ -332,29 +332,22 @@ class InstructionFactory:
             return True
         else:
             return False
-
-class Stage():
-    def execute(self):
-        return "No File"
-
-class PreProcessor(Stage):
+class PreProcessor():
     def __init__(self, file):
         self._file = file
 
     def execute(self):
-        outfile = self._file.split("/")[-1:][0].split(".")[0] + ".s"
-        out = open(outfile, "w")
+        out = ""
         asm = open(self._file, "r")
 
         for line in asm:
             l = line.split("//")[0].rstrip()
             if len(l) > 0:
-                out.write(l + '\n')
+                out += l + '\n'
 
-        out.close()
         asm.close()
 
-        return outfile
+        return out
 
 class Subroutine():
     def __init__(self, name):
@@ -397,7 +390,7 @@ class StringDataItem(DataItem):
         self._value += "\0"
         return array.array('B', struct.pack(f'{len(self._value)}s', self._value.encode('utf-8')))
 
-class Assembler(Stage):
+class Assembler():
     Sections = [
         ".data",
         ".text",
@@ -412,8 +405,7 @@ class Assembler(Stage):
         ".string",
     ]
 
-    def __init__(self, file):
-        self._file = file
+    def __init__(self):
         self._currentSection = None
         self._currentSubroutine = None
         self._subroutines = dict()
@@ -421,10 +413,11 @@ class Assembler(Stage):
         self._dataitems = dict()
         self._entry = None
 
-    def execute(self):
-        asm = open(self._file, "r")
+    def execute(self, file):
+        for line in file.split("\n"):
+            if len(line) == 0:
+                continue
 
-        for line in asm:
             if line.rstrip() in Assembler.Sections:
                 self._currentSection = line.rstrip()
                 continue
@@ -433,8 +426,6 @@ class Assembler(Stage):
                 self._processDataSection(line.rstrip())
             if self._currentSection in Assembler.Sections[1]:
                 self._processTextSection(line.rstrip())
-
-        asm.close()
 
         return None
 
@@ -475,7 +466,7 @@ class Assembler(Stage):
     def getEntry(self):
         return self._entry
 
-class Linker(Stage):
+class Linker():
     def __init__(self, assembler, output):
         self._assembler = assembler
         self._output = output
@@ -500,6 +491,7 @@ class Linker(Stage):
             data = dataitems[d].toBytes()
             output.write(data)
             links[d] = mem
+            print(f"{links[d]} {d} {len(data)}")
             mem += len(data)
 
         for key in subroutines:
@@ -519,6 +511,7 @@ class Linker(Stage):
                         else:
                             i = i.replace(link, f"{links[link]}(x0)")
 
+                print(f"{hex(mem)} {i}")
                 mem += 2
 
                 I = factory.create(i)
@@ -532,12 +525,16 @@ class Linker(Stage):
         output.close()
         return None
 
-# The preprocessor strips the file and prepares it for the assembler
-pp = PreProcessor(args.asm)
+# Initialize the
+ap = Assembler()
 
-# The assembler organizes all sections and gets them ready for the linker
-ap = Assembler(pp.execute())
-ap.execute()
+for asm in args.asm:
+    # The preprocessor strips the file and prepares it for the assembler
+    pp = PreProcessor(asm)
+    a = pp.execute()
+
+    # The assembler organizes all sections and gets them ready for the linker
+    ap.execute(a)
 
 # I really don't like the way I did the linker.. The others take in a file
 # and this should conform to that as method as well, but I got lazy. The
