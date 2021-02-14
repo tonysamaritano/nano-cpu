@@ -1,5 +1,5 @@
-TOP=VCPU
-SRC=CPU.v
+TOP=VProcessor
+SRC=Processor.v
 BIN_DIR=build
 JAVA_DIR=target
 
@@ -27,7 +27,9 @@ verilate:
 		--cc ${BIN_DIR}/${SRC} \
 		--exe src/main/cpp/main.cpp \
 		--trace \
-		--Mdir ${BIN_DIR}
+		--Mdir ${BIN_DIR} \
+		-CFLAGS -g \
+		-CFLAGS -I../src/main/cpp/include
 
 	# Compiles generated cpp into library
 	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk ${TOP}__ALL.a
@@ -39,8 +41,10 @@ build-cpu:
 		verilated.o \
 		verilated_vcd_c.o
 
+	# g++ -g -fpermissive -Isrc/main/cpp/include -o ${BIN_DIR}/module.a src/main/cpp/src/Module.cpp
+
 	# Builds Simulation Application
-	g++ ${BIN_DIR}/main.o \
+	g++ -g ${BIN_DIR}/main.o \
 		${BIN_DIR}/${TOP}__ALL.a \
 		${BIN_DIR}/verilated.o \
 		${BIN_DIR}/verilated_vcd_c.o \
@@ -48,9 +52,12 @@ build-cpu:
 
 all: compile-verilog verilate build-cpu
 
+.PHONY: examples/subroutine
+
 # Programs
-examples/loop:
+examples/subroutine:
 	mkdir -p ${BIN_DIR}
 	python3 tools/compiler.py \
-		--asm examples/loop.asm \
-		--bin ${BIN_DIR}/loop.bin
+		--asm examples/subroutine/math.asm \
+		--asm examples/subroutine/subroutine.asm \
+		--bin ${BIN_DIR}/subroutine.bin

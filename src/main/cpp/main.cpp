@@ -3,42 +3,66 @@
 #include <csignal>
 #include <vector>
 #include <unistd.h>
+#include <cassert>
 
 #include <string>
 
-#include "verilated.h"
-#include "verilated_vcd_c.h"
+#include "VProcessor.h"
 
-#include "VCPU.h"
+#include "Module.h"
+#include "Memory.h"
 
-std::vector<uint8_t> defaultProgram = {
-    0b00000000, // NOP          // NOP to flush pipeline
-    0b01010110, // LDI #0x6     // Load 6 into A Register
-    0b01000000, // STA $0x0     // Put 6 into 0x0 address
-    0b01011111, // LDI #0xf     // Load 15 into A Register
-    0b00100000, // ADD $0x0     // Add address STORE_A to reg A
-    0b01000000, // STA $0x0     // Reg A into 0x0 address
-    0b00010000, // LDA $0x0     // Load 0x0 into A Register
-    0b00100000, // ADD $0x0     // Add address STORE_A to reg A
-    0b11100000, // OUT          // Outputs contents of reg A
-    0b11110000, // HLT          // Halt processor
+static std::vector<uint16_t> program0 = {
+    0b0010111000001000,
+    0b1010010001001001,
+    0b0010111000010000,
+    0b1010001010010001,
+    0b0000100001011000,
+    0b0010110000000011,
+    0b1110110000000111,
 };
 
-static bool end = false;
+static std::vector<uint16_t> program1 = {
+    0b0010111000001000,
+    0b0010110000010000,
+    0b1010101010010001,
+    0b0000000000011000,
+    0b0011111010010000,
+    0b0000110010011000,
+    0b0011111001001000,
+    0b0010000001000100,
+    0b1001101111111011,
+    0b0010110000000011,
+    0b1110110000000111,
+};
 
-void step(VCPU *cpu, VerilatedVcdC *trace, int steps, int &time);
-
-void signal_callback_handler(int signum)
+class Processor : public Module<VProcessor>
 {
-    printf("Exiting! %i\n", signum);
-    end = true;
-}
+public:
+    Processor(std::string tracefile, int verbosity = 0) :
+        Module(tracefile),
+        m_verbosity(verbosity) {}
 
-int main(int argc, char** argv, char** env) {
+    void step() final
+    {
+        if ((io_mem_write_we && m_verbosity > 0) || m_verbosity > 1) {
+            printf("R: Mem[0x%02X] 0x%04X\tW: En: %s mem[%u]: %u\n",
+                io_mem_read_addr,
+                io_mem_read_data,
+                io_mem_write_we ? "Yes" : " No",
+                io_mem_write_addr,
+                io_mem_write_data);
+        }
+
+        Module<VProcessor>::step();
+    }
+
+private:
+    int m_verbosity = 0;
+};
+
+int main(int argc, char *argv[]) {
     Verilated::commandArgs(argc, argv);
-
-    VerilatedVcdC *tc = nullptr;
-    signal(SIGINT, signal_callback_handler);
 
     char c;
     int verbosity = 0;
@@ -61,93 +85,47 @@ int main(int argc, char** argv, char** env) {
         }
     }
 
-    /* Attempt to load a binary file */
-    std::vector<uint8_t> program;
+    /* Initialize the top level CPU */
+    Processor top(tracefile, verbosity);
+
+    /* Initialize Memory */
+    Memory<uint16_t> memory(1024);
+
+    /* Initialize Program */
+    std::vector<uint16_t> program;
     if (bin.empty())
     {
         /* Load the default program if there is no binary
          * file. */
-        program = defaultProgram;
+        program = program0;
     }
     else
     {
         FILE *f = fopen(bin.c_str(), "rb");
-        uint8_t byte;
-        while (fread(&byte, 1, 1, f) > 0)
+        uint16_t ins;
+        while (fread(&ins, 1, sizeof(uint16_t), f) > 0)
         {
-            program.push_back(byte);
+            program.push_back(ins);
         }
         fclose(f);
     }
 
-    /* Initialize the top level CPU */
-    VCPU* top = new VCPU;
-
-    if (!tracefile.empty())
+    int i = 0;
+    for (auto ins : program)
     {
-        Verilated::traceEverOn(true);
-        tc = new VerilatedVcdC;
-        top->trace(tc, 99); // Trace 99 levels of hierarchy
-        tc->open(tracefile.c_str());
+        memory[i] = ins;
+        i = i + 2;
     }
 
-    /* Prepare cpu for instruction load */
-    top->io_halt = 0;
-    top->io_load = 1;
-
-    /* Load in program into instruction cache */
-    int time_ns = 0;
-    int count = 0;
-    for (auto ins : program) {
-        top->io_addr = count++; /* Instruction address */
-        top->io_data = ins; /* Instruction */
-
-        /* Cycle the clock */
-        step(top, tc, 1, time_ns);
-    }
-    top->io_load = 0;
-
-    /* Run the program */
-    while (!top->io_halt && !end) {
-        /* Cycle the clock */
-        step(top, tc, 1, time_ns);
-
-        /* Print CPU states */
-        if (verbosity > 0)
+    while (!top.io_halt)
+    {
+        top.io_mem_read_data = memory[top.io_mem_read_addr];
+        top.step();
+        if (top.io_mem_write_we)
         {
-            VL_PRINTF("Out[%i]: ins 0x%2X res %u \n",
-                top->CPU__DOT__pc__DOT__register,
-                top->CPU__DOT__insReg, /* Internal variable */
-                top->io_output); /* IO */
-        }
-
-        /* Output */
-        if (top->io_valid)
-        {
-            VL_PRINTF("We got an output! out: %u\n", top->io_output);
+            memory[top.io_mem_write_addr] = top.io_mem_write_data;
         }
     }
-    delete top;
-    if (tc) tc->close();
-    if (tc) delete tc;
 
-    exit(0);
-}
-
-void step(VCPU *cpu, VerilatedVcdC *trace, int steps, int &time)
-{
-    for (int i=0; i < steps; i++)
-    {
-        /* Simulate Rising Edge */
-        cpu->clock = 1;
-        cpu->eval();
-
-        if (trace) trace->dump(time++);
-
-        /* Simulate Falling Edge */
-        cpu->clock = 0;
-        cpu->eval();
-
-        if (trace) trace->dump(time++);
-    }
+    return 0;
 }
