@@ -4,6 +4,8 @@
 #include <vector>
 #include <unistd.h>
 #include <cassert>
+#include <iostream>
+#include <iomanip>
 
 #include <string>
 
@@ -61,13 +63,15 @@ private:
     int m_verbosity = 0;
 };
 
+void help();
+
 int main(int argc, char *argv[]) {
     Verilated::commandArgs(argc, argv);
 
     char c;
     int verbosity = 0;
     std::string bin, tracefile;
-    while ((c = getopt (argc, argv, "vb:t:")) != -1)
+    while ((c = getopt (argc, argv, "vb:t:h")) != -1)
     {
         switch (c)
         {
@@ -80,6 +84,9 @@ int main(int argc, char *argv[]) {
         case 't':
             tracefile = std::string(optarg);
             break;
+        case 'h':
+            help();
+            return 0;
         default:
             break;
         }
@@ -128,4 +135,20 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+void help()
+{
+    using namespace std;
+    int argwidth = 14;
+    int descwidth = 40;
+    cout << "usage: VProcessor [options]" << endl << endl;
+    cout << "  " << setw(argwidth) << left <<   "-h"
+        <<  setw(descwidth) << left <<          "help text" << endl;
+    cout << "  " << setw(argwidth) << left <<   "-v"
+        <<  setw(descwidth) << left <<          "verbosity level e.g. -v = level 1 -vv = level 2..." << endl;
+    cout << "  " << setw(argwidth) << left <<   "-b <file>"
+        <<  setw(descwidth) << left <<          "binary program file" << endl;
+    cout << "  " << setw(argwidth) << left <<   "-t <file>"
+        <<  setw(descwidth) << left <<          "output trace file (.vcd)" << endl;
 }

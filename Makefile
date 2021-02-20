@@ -44,7 +44,8 @@ build-cpu:
 	# g++ -g -fpermissive -Isrc/main/cpp/include -o ${BIN_DIR}/module.a src/main/cpp/src/Module.cpp
 
 	# Builds Simulation Application
-	g++ -g ${BIN_DIR}/main.o \
+	g++ -fsanitize=address -static-libasan \
+		-g ${BIN_DIR}/main.o \
 		${BIN_DIR}/${TOP}__ALL.a \
 		${BIN_DIR}/verilated.o \
 		${BIN_DIR}/verilated_vcd_c.o \

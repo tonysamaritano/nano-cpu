@@ -50,7 +50,7 @@ R: Mem[0x3E] 0xE007     W: En:  No mem[0]: 0
 ```
 gtkwave build/subroutine.vcd
 ```
-![alt text](examples/loop.png "Title")
+![alt text](examples/subroutine.png "Title")
 
 # ISA 2.1
 Its useful to break down an ISA into its component parts: arithmatic, load/store, branch, and CSR. I think the 8-bit CPU is too limiting for this project because you have no overhead to do anything significant. I think I'd rather change the architecture to a limited 16-bit architecture so that I don't need to deal with the complexities of fitting everything into such a small space.
