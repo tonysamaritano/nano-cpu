@@ -1,5 +1,3 @@
-// See README.md for license details.
-
 def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
   Seq() ++ {
     // If we're building with Scala > 2.11, enable the compile option
@@ -28,7 +26,7 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 name := "chisel-module-template"
 
-version := "3.3.0"
+version := "3.3.2"
 
 scalaVersion := "2.12.10"
 
@@ -43,8 +41,8 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.fu
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Seq(
-  "chisel-iotesters" -> "1.4.1+",
-  "chiseltest"  -> "0.2.1+"
+  "chisel-iotesters" -> "1.5.2",
+  "chiseltest" -> "0.3.2"
   )
 
 libraryDependencies ++= defaultVersions.map { case (dep, ver) =>

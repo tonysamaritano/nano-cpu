@@ -16,6 +16,13 @@ import chisel3.tester.RawTester.test
 object main extends App {
   val rnd = scala.util.Random;
 
+  def max = scala.math.pow(2,Instructions.WORD_SIZE).toLong - 1
+
+  def toTwoCompl(max: Long, value: Long) : Long = {
+    val res = max-value+1
+    res
+  }
+
   /* Tests */
   test(new PassthroughGenerator(8)) { c =>
     for (i <- 0 until 100) {
@@ -34,9 +41,9 @@ object main extends App {
     val a0 = 7.U
 
     /* Data to store */
-    var x = rnd.nextInt(65535)
-    var y = rnd.nextInt(65535)
-    var z = rnd.nextInt(65535)
+    var x = rnd.nextInt((max/2).toInt)
+    var y = rnd.nextInt((max/2).toInt)
+    var z = rnd.nextInt((max/2).toInt)
 
     /* Write random value to register */
     c.io.data.poke(x.U)
@@ -78,43 +85,49 @@ object main extends App {
   }
 
   test(new ALU) { c =>
+    var x = rnd.nextInt((max/8).toInt) + (max/8).toInt
+    var y = rnd.nextInt((max/8).toInt) - 1
+
+    require((x+y) < max)
+    require(x > y)
+
     /* Add */
     c.io.ctl.poke(Control.ALU_ADD)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(4321.U)
-    c.io.data.out.expect(5555.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
+    c.io.data.out.expect((x+y).U)
 
     /* Sub */
     c.io.ctl.poke(Control.ALU_SUB)
-    c.io.src0.poke(4321.U)
-    c.io.src1.poke(1234.U)
-    c.io.data.out.expect(3087.U)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(4321.U)
-    c.io.data.out.expect("b_1111_0011_1111_0001".U) /* 2's compliment */
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
+    c.io.data.out.expect((x-y).U)
+    c.io.src0.poke(y.U)
+    c.io.src1.poke(x.U)
+    c.io.data.out.expect(toTwoCompl(max, x-y).U)
 
     /* And */
     c.io.ctl.poke(Control.ALU_AND)
-    c.io.src0.poke("b_1111_1111".U)
-    c.io.src1.poke("b_0000_1111".U)
-    c.io.data.out.expect("b_1111".U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
+    c.io.data.out.expect((x&y).U)
 
     /* Or */
     c.io.ctl.poke(Control.ALU_OR)
-    c.io.src0.poke("b_1010_1010".U)
-    c.io.src1.poke("b_0101_0101".U)
-    c.io.data.out.expect("b_1111_1111".U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
+    c.io.data.out.expect((x|y).U)
 
     /* Xor */
     c.io.ctl.poke(Control.ALU_XOR)
-    c.io.src0.poke("b_0010_1011".U)
-    c.io.src1.poke("b_0001_0111".U)
-    c.io.data.out.expect("b_0011_1100".U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
+    c.io.data.out.expect((x^y).U)
 
     /* Not */
     c.io.ctl.poke(Control.ALU_NOT)
-    c.io.src0.poke( "b_1010_1010_1010_1010".U)
-    c.io.data.out.expect("b_0101_0101_0101_0101".U)
+    c.io.src0.poke(x.U)
+    c.io.data.out.expect((toTwoCompl(max, x)-1).U)
 
     /* Shift Left */
     c.io.ctl.poke(Control.ALU_SLL)
@@ -134,82 +147,76 @@ object main extends App {
 
     /* EQ */
     c.io.ctl.poke(Control.ALU_EQ)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(true.B)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1235.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
     c.io.data.br.expect(false.B)
 
     /* NE */
     c.io.ctl.poke(Control.ALU_NE)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(false.B)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1235.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
     c.io.data.br.expect(true.B)
 
     /* GE */
     c.io.ctl.poke(Control.ALU_GEU)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(true.B)
-    c.io.src0.poke(1235.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
     c.io.data.br.expect(true.B)
-    c.io.src0.poke(1233.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(y.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(false.B)
     c.io.ctl.poke(Control.ALU_GE)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(true.B)
-    c.io.src0.poke(1235.U)
-    c.io.src1.poke(1234.U)
-    c.io.data.br.expect(true.B)
-    c.io.src0.poke("b_1111_1011_0010_1111".U)
-    c.io.src1.poke("b_1111_1011_0010_1110".U)
-    c.io.data.br.expect(true.B)
-    c.io.src0.poke("b_0111_1011_0010_1111".U)
-    c.io.src1.poke("b_1111_1011_0010_1110".U)
-    c.io.data.br.expect(true.B)
-    c.io.src0.poke("b_1111_1011_0010_1110".U)
-    c.io.src1.poke("b_1111_1011_0010_1111".U)
+    if (x > max/2) c.io.src0.poke(x.U)
+    else c.io.src0.poke(toTwoCompl(max, x).U)
+    c.io.src1.poke(toTwoCompl(max, y).U)
     c.io.data.br.expect(false.B)
-    c.io.src0.poke("b_1111_1011_0010_1110".U)
-    c.io.src1.poke("b_0111_1011_0010_1111".U)
-    c.io.data.br.expect(false.B)
+    if (x > max/2) c.io.src1.poke(x.U)
+    else c.io.src1.poke(toTwoCompl(max, x).U)
+    c.io.src0.poke(toTwoCompl(max, y).U)
+    c.io.data.br.expect(true.B)
+    if (x > max/2) c.io.src1.poke(x.U)
+    else c.io.src1.poke(toTwoCompl(max, x).U)
+    c.io.src0.poke(y.U)
+    c.io.data.br.expect(true.B)
 
     /* LT */
     c.io.ctl.poke(Control.ALU_LTU)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(false.B)
-    c.io.src0.poke(1235.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(y.U)
     c.io.data.br.expect(false.B)
-    c.io.src0.poke(1233.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(y.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(true.B)
     c.io.ctl.poke(Control.ALU_LT)
-    c.io.src0.poke(1234.U)
-    c.io.src1.poke(1234.U)
+    c.io.src0.poke(x.U)
+    c.io.src1.poke(x.U)
     c.io.data.br.expect(false.B)
-    c.io.src0.poke(1235.U)
-    c.io.src1.poke(1234.U)
+    if (x > max/2) c.io.src1.poke(x.U)
+    else c.io.src1.poke(toTwoCompl(max, x).U)
+    c.io.src0.poke(toTwoCompl(max, y).U)
     c.io.data.br.expect(false.B)
-    c.io.src0.poke("b_1111_1011_0010_1111".U)
-    c.io.src1.poke("b_1111_1011_0010_1110".U)
+    if (x > max/2) c.io.src1.poke(x.U)
+    else c.io.src1.poke(toTwoCompl(max, x).U)
+    c.io.src0.poke(y.U)
     c.io.data.br.expect(false.B)
-    c.io.src0.poke("b_0111_1011_0010_1111".U)
-    c.io.src1.poke("b_1111_1011_0010_1110".U)
-    c.io.data.br.expect(false.B)
-    c.io.src0.poke("b_1111_1011_0010_1110".U)
-    c.io.src1.poke("b_1111_1011_0010_1111".U)
-    c.io.data.br.expect(true.B)
-    c.io.src0.poke("b_1111_1011_0010_1110".U)
-    c.io.src1.poke("b_0111_1011_0010_1111".U)
+    if (x > max/2) c.io.src0.poke(x.U)
+    else c.io.src0.poke(toTwoCompl(max, x).U)
+    c.io.src1.poke(y.U)
     c.io.data.br.expect(true.B)
   }
 
@@ -249,7 +256,8 @@ object main extends App {
     /* 8-bit immediate unsigned upper */
     c.io.ins.poke("b_1001_1111_1100_0000".U)
     c.io.ctl.poke(Control.IMM_UUU)
-    c.io.imm.expect(-256.S) /* -256.S is 65280.U */
+    if (Instructions.WORD_SIZE > 16) c.io.imm.expect(65280.S)
+    else c.io.imm.expect(-256.S) /* -256.S is 65280.U */
 
     /* 5-bit immediate */
     c.io.ins.poke("b_1010_0010_0000_0000".U)
@@ -270,114 +278,116 @@ object main extends App {
     c.io.imm.expect(1023.S)
   }
 
-  test(new MagicMemory(1024)) { c =>
-    val dataFill = Array.range(0, 511)
+  if (Instructions.WORD_SIZE == 16) {
+    test(new MagicMemory(1024)) { c =>
+      val dataFill = Array.range(0, 511)
 
-    for((data, i) <- dataFill.zipWithIndex)
-    {
-      c.io.write.addr.poke((i*2).U)
-      c.io.write.data.poke(data.U)
-      c.io.write.we.poke(false.B)
-      c.clock.step(1)
+      for((data, i) <- dataFill.zipWithIndex)
+      {
+        c.io.write.addr.poke((i*2).U)
+        c.io.write.data.poke(data.U)
+        c.io.write.we.poke(false.B)
+        c.clock.step(1)
+      }
+
+      for((data, i) <- dataFill.zipWithIndex)
+      {
+        c.io.write.addr.poke((i*2).U)
+        c.io.read.data.expect(0.U)
+        c.clock.step(1)
+      }
+
+      for((data, i) <- dataFill.zipWithIndex)
+      {
+        c.io.write.addr.poke((i*2).U)
+        c.io.write.data.poke(data.U)
+        c.io.write.we.poke(true.B)
+        c.clock.step(1)
+        c.io.read.addr.poke((i*2).U)
+        c.io.read.data.expect(data.U)
+        c.clock.step(1)
+      }
     }
 
-    for((data, i) <- dataFill.zipWithIndex)
-    {
-      c.io.write.addr.poke((i*2).U)
-      c.io.read.data.expect(0.U)
-      c.clock.step(1)
-    }
+    test(new TestCore) { c =>
+      /* NOTE: c.io.out.addr is the output to the ALU */
+      for ((ins, i) <- CoreTestPrograms.program1.zipWithIndex) {
+        c.io.ins.poke(ins.ins())
+        println(s"${i}: ${ins.desc()}")
+        c.io.out.addr.expect(ins.out())
+        c.clock.step(1)
+      }
 
-    for((data, i) <- dataFill.zipWithIndex)
-    {
-      c.io.write.addr.poke((i*2).U)
-      c.io.write.data.poke(data.U)
-      c.io.write.we.poke(true.B)
-      c.clock.step(1)
-      c.io.read.addr.poke((i*2).U)
-      c.io.read.data.expect(data.U)
-      c.clock.step(1)
-    }
-  }
+      for ((ins, i) <- CoreTestPrograms.program2.zipWithIndex) {
+        c.io.ins.poke(ins.ins())
+        println(s"${i}: ${ins.desc()}")
+        c.io.out.addr.expect(ins.out())
+        c.clock.step(1)
+      }
 
-  test(new TestCore) { c =>
-    /* NOTE: c.io.out.addr is the output to the ALU */
-    for ((ins, i) <- CoreTestPrograms.program1.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()}")
-      c.io.out.addr.expect(ins.out())
-      c.clock.step(1)
-    }
+      for ((ins, i) <- CoreTestPrograms.program3.zipWithIndex) {
+        c.io.ins.poke(ins.ins())
+        println(s"${i}: ${ins.desc()}")
+        c.io.out.addr.expect(ins.out())
+        c.clock.step(1)
+      }
 
-    for ((ins, i) <- CoreTestPrograms.program2.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()}")
-      c.io.out.addr.expect(ins.out())
-      c.clock.step(1)
-    }
+      for ((ins, i) <- CoreTestPrograms.program4.zipWithIndex) {
+        c.io.ins.poke(ins.ins())
+        println(s"${i}: ${ins.desc()}")
+        c.io.out.addr.expect(ins.out())
+        c.clock.step(1)
+      }
 
-    for ((ins, i) <- CoreTestPrograms.program3.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()}")
-      c.io.out.addr.expect(ins.out())
-      c.clock.step(1)
-    }
+      for ((ins, i) <- CoreTestPrograms.program5.zipWithIndex) {
+        c.io.ins.poke(ins.ins())
+        println(s"${i}: ${ins.desc()}")
+        c.io.out.addr.expect(ins.out())
+        c.clock.step(1)
+      }
 
-    for ((ins, i) <- CoreTestPrograms.program4.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()}")
-      c.io.out.addr.expect(ins.out())
-      c.clock.step(1)
-    }
-
-    for ((ins, i) <- CoreTestPrograms.program5.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()}")
-      c.io.out.addr.expect(ins.out())
-      c.clock.step(1)
-    }
-
-    for ((ins, i) <- CoreTestPrograms.program6.zipWithIndex) {
-      c.io.ins.poke(ins.ins())
-      println(s"${i}: ${ins.desc()}")
-      c.io.out.addr.expect(ins.out())
-      c.clock.step(1)
-    }
-  }
-
-  test(new TestProcessor) { c =>
-    /* Program load */
-    for((ins, i) <- Programs.program_42.zipWithIndex)
-    {
-      c.io.mem.addr.poke((i*2).U)
-      c.io.mem.data.poke(ins.ins())
-      c.io.mem.we.poke(true.B)
-      c.clock.step(1)
-    }
-
-    /* Program execution */
-    c.io.mem.we.poke(false.B)
-    for((ins, i) <- Programs.program_42.zipWithIndex)
-    {
-      c.clock.step(1)
-    }
-
-    /* Program load */
-    for((ins, i) <- Programs.program_soft_mul.zipWithIndex)
-    {
-      c.io.mem.addr.poke((i*2).U)
-      c.io.mem.data.poke(ins.ins())
-      c.io.mem.we.poke(true.B)
-      c.clock.step(1)
-    }
-
-    /* Program execution */
-    c.io.mem.we.poke(false.B)
-    for(i <- 0 to 40)
-    {
-      c.clock.step(1)
+      for ((ins, i) <- CoreTestPrograms.program6.zipWithIndex) {
+        c.io.ins.poke(ins.ins())
+        println(s"${i}: ${ins.desc()}")
+        c.io.out.addr.expect(ins.out())
+        c.clock.step(1)
+      }
     }
   }
+
+  // test(new TestProcessor) { c =>
+  //   /* Program load */
+  //   for((ins, i) <- Programs.program_42.zipWithIndex)
+  //   {
+  //     c.io.mem.addr.poke((i*2).U)
+  //     c.io.mem.data.poke(ins.ins())
+  //     c.io.mem.we.poke(true.B)
+  //     c.clock.step(1)
+  //   }
+
+  //   /* Program execution */
+  //   c.io.mem.we.poke(false.B)
+  //   for((ins, i) <- Programs.program_42.zipWithIndex)
+  //   {
+  //     c.clock.step(1)
+  //   }
+
+  //   /* Program load */
+  //   for((ins, i) <- Programs.program_soft_mul.zipWithIndex)
+  //   {
+  //     c.io.mem.addr.poke((i*2).U)
+  //     c.io.mem.data.poke(ins.ins())
+  //     c.io.mem.we.poke(true.B)
+  //     c.clock.step(1)
+  //   }
+
+  //   /* Program execution */
+  //   c.io.mem.we.poke(false.B)
+  //   for(i <- 0 to 40)
+  //   {
+  //     c.clock.step(1)
+  //   }
+  // }
 
   println("SUCCESS!!")
 }
