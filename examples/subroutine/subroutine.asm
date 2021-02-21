@@ -36,7 +36,7 @@ divide_test:
 
     addi    a1, x0, 6       // Load 6 into a1
     add     sp, x0, ra      // store return address in stack pointer
-    jal     ra, soft_divide // 64/7
+    jal     ra, soft_divide // 64/6=10
     add     ra, x0, sp      // restore return address
     sw      x0, 0(s0)       // Store result at 0
     jalr    x0, 0(ra)       // unconditional jump back to return address

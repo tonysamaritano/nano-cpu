@@ -1,5 +1,5 @@
-# Chisel Project Template
-16-bit von Neumann Processor as a simple demonstration project, inspired by RISC-V designs. The point of this project is to create an 16-bit computer for learning how to build a computer from scratch based on my current understanding of computer architecture.
+# The Completely F***ing Useless Processor (CFU)
+The Completely F'ing Useless processor (**CFU** for short) is, for all intents and purposes, a completely f***ing useless processor and ISA designed completely from scratch. The CFU processor and its ISA are inspired by the RISC-V ISA and take many design cues from the [RISC-V Mini](https://github.com/ucb-bar/riscv-mini) project. The point of this project is completely pedagogical - a way to fundimentally learn how to build a processor, ISA, and toolchain, and OS for some from of real-world use.
 
 # How to build
 In order to build the Processor and simulate it, run the following commands:
@@ -10,7 +10,7 @@ make
 
 ```
 # Will load and run the default program (with verbosity)
-./build/VProcessor -v
+./build/VCFU -v
 ```
 Prints:
 ```
@@ -25,7 +25,7 @@ I've built this to allow for more advance debugging features such as simulated t
 make examples/subroutine
 ```
 ```
-./build/VProcessor -t build/subroutine.vcd -vv -b build/subroutine.bin
+./build/VCFU -t build/subroutine.vcd -vv -b build/subroutine.bin
 ```
 `-t` creates a trace file for debugging
 `-b` loads in a binary
@@ -79,7 +79,7 @@ The register stucture will be simular to RISC-V with a zero register and the PC 
 
 I think this will be a nice, simple way for the processor to be mildly useful.
 
-## ISA Overview
+## CFU ISA Overview
 |Instruction|Type|funct3 (3b)|src1 (3b)|func1 (1b)|src0 (3b)|dst (3b)|Opcode (3b)|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |**ADD**|R|`0x0`|src1|`N/A`|src0|dst|`0x0`|
@@ -110,7 +110,7 @@ I think this will be a nice, simple way for the processor to be mildly useful.
 |**BR**|B|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|imm[`10:8`]|`0x6`|
 |**HLT**|R|`0x7`|`N/A`|`N/A`|`N/A`|`N/A`|`0x7`|
 
-# ISA 2.1 Assembly
+# CFU ISA Assembly
 I've created a super simple assembly parser to create and link machine code. It only has a few features but should be pretty easy to use.
 
 Comments are `//`'s

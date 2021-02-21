@@ -1,4 +1,4 @@
-package cpu
+package cfu.config
 
 import chisel3._
 import chisel3.util.BitPat
@@ -48,10 +48,4 @@ object Instructions {
     def CLR  = BitPat("b_000?_????_????_?111")
     def FLG  = BitPat("b_001?_????_????_?111")
     def HLT  = BitPat("b_111?_????_????_?111")
-
-    /* Parameters */
-    def REGFILE_SIZE     = 8
-    def ARCH_SIZE        = 16
-    def INS_SIZE         = 16
-    def WORD_SIZE        = 16
 }
