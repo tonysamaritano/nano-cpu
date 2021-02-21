@@ -1,4 +1,6 @@
-package cpu
+package cfu.core
+
+import cfu.config._
 
 import chisel3._
 import chisel3.util.{ListLookup}
@@ -65,11 +67,11 @@ object Control {
   def WR_MEMW         = 2.U(WR_BITWIDTH)
 
   /* Default Control Signal */
-  val default = List(IMM_RI, SRC1DP_REG, WB_XXX, ALU_ADD, BR_PC,  LD_XXX, WR_XXX)
+  def default = List(IMM_RI, SRC1DP_REG, WB_XXX, ALU_ADD, BR_PC,  LD_XXX, WR_XXX)
 
   /* Control Signal Lookup */
   /*               Imm Gen, Src1,       Write,   ALU Ctl,  Br Src*/
-  val map = Array(
+  def map = Array(
     ADD  -> List(  IMM_RI,  SRC1DP_REG, WB_ALU,  ALU_ADD,  BR_PC,  LD_XXX, WR_XXX),
     ADDI -> List(  IMM_RI,  SRC1DP_IMM, WB_ALU,  ALU_ADD,  BR_PC,  LD_XXX, WR_XXX),
     SUB  -> List(  IMM_RI,  SRC1DP_REG, WB_ALU,  ALU_SUB,  BR_PC,  LD_XXX, WR_XXX),
@@ -104,7 +106,7 @@ object Control {
   )
 }
 
-class Control extends Bundle {
+class ControlSignals extends Bundle {
   val imm  = Output(UInt(Control.IMM_BITWIDTH))
   val src1 = Output(UInt(Control.SRC1DP_BITWIDTH))
   val wb   = Output(UInt(Control.WB_BITWIDTH))
@@ -117,8 +119,8 @@ class Control extends Bundle {
 
 class Controller extends Module {
   val io = IO(new Bundle {
-    val ins = Input(UInt(Instructions.INS_SIZE.W))
-    val ctl = Output(new Control)
+    val ins = Input(UInt(Config.INS_SIZE.W))
+    val ctl = Output(new ControlSignals)
   })
 
   val ctrlSignals = ListLookup(io.ins, Control.default, Control.map)

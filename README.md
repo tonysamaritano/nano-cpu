@@ -1,5 +1,5 @@
-# Chisel Project Template
-16-bit von Neumann Processor as a simple demonstration project, inspired by RISC-V designs. The point of this project is to create an 16-bit computer for learning how to build a computer from scratch based on my current understanding of computer architecture.
+# The Completely F***ing Useless Processor (CFU)
+The Completely F'ing Useless processor (**CFU** for short) is, for all intents and purposes, a completely f***ing useless processor and ISA designed completely from scratch. The CFU processor and its ISA are inspired by the RISC-V ISA and take many design cues from the [RISC-V Mini](https://github.com/ucb-bar/riscv-mini) project. The point of this project is completely pedagogical - a way to fundimentally learn how to build a processor, ISA, and toolchain, and OS for some from of real-world use.
 
 # How to build
 In order to build the Processor and simulate it, run the following commands:
@@ -10,7 +10,7 @@ make
 
 ```
 # Will load and run the default program (with verbosity)
-./build/VProcessor -v
+./build/VCFU -v
 ```
 Prints:
 ```
@@ -25,7 +25,7 @@ I've built this to allow for more advance debugging features such as simulated t
 make examples/subroutine
 ```
 ```
-./build/VProcessor -t build/subroutine.vcd -vv -b build/subroutine.bin
+./build/VCFU -t build/subroutine.vcd -vv -b build/subroutine.bin
 ```
 `-t` creates a trace file for debugging
 `-b` loads in a binary
@@ -52,7 +52,7 @@ gtkwave build/subroutine.vcd
 ```
 ![alt text](examples/subroutine.png "Title")
 
-# ISA 2.1
+# CFU ISA
 Its useful to break down an ISA into its component parts: arithmatic, load/store, branch, and CSR. I think the 8-bit CPU is too limiting for this project because you have no overhead to do anything significant. I think I'd rather change the architecture to a limited 16-bit architecture so that I don't need to deal with the complexities of fitting everything into such a small space.
 
 I want to put all opcodes into a 3-bit space and then the different types of can be organized accordingly.
@@ -75,11 +75,10 @@ The register stucture will be simular to RISC-V with a zero register and the PC 
 |Register|Register Name|Desciption|
 |-|-|-|
 |pc|pc|Program Counter|
-|fl|Flags|Flags Register|
 
 I think this will be a nice, simple way for the processor to be mildly useful.
 
-## ISA Overview
+## CFU ISA Overview
 |Instruction|Type|funct3 (3b)|src1 (3b)|func1 (1b)|src0 (3b)|dst (3b)|Opcode (3b)|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |**ADD**|R|`0x0`|src1|`N/A`|src0|dst|`0x0`|
@@ -110,7 +109,7 @@ I think this will be a nice, simple way for the processor to be mildly useful.
 |**BR**|B|imm[`4`], `0x0`|imm[`3:1`]|imm[`0`]|imm[`7:5`]|imm[`10:8`]|`0x6`|
 |**HLT**|R|`0x7`|`N/A`|`N/A`|`N/A`|`N/A`|`0x7`|
 
-# ISA 2.1 Assembly
+# CFU ISA Assembly
 I've created a super simple assembly parser to create and link machine code. It only has a few features but should be pretty easy to use.
 
 Comments are `//`'s
@@ -185,3 +184,37 @@ As you can see in the examples above, both data items and subroutines can be pla
 |`entry`|Tells the linker what function to jump to on start|
 
 All compiled programs must have 1 `entry` symbol for the entry location. On start, the program will jump to where ever the entry program is.
+
+# Appendix
+## Switch between 32-bit and 16-bit
+There isn't much that needs to be done to switch between 32-bit and 16-bit:
+
+In `src/main/scala/cfu/config/Parameters.scala`:
+```scala
+// This tells the generator to use X bit registers
+object Config {
+     /* Parameters */
+     def REGFILE_SIZE     = 8
+-    def ARCH_SIZE        = 16 // remove
++    def ARCH_SIZE        = 32 // add
+     def INS_SIZE         = 16
+     def WORD_SIZE        = ARCH_SIZE
+ }
+```
+
+In `src/main/cpp/main.cpp`:
+```cpp
+     // Initialize as an uint32_t instead of uint16_t
+     /* Initialize Memory */
+-    Memory<uint16_t> memory(1024); // remove
++    Memory<uint32_t> memory(1024); // add
+```
+
+In `tools/compiler.py`:
+```py
+# packs data into 32-bit values instead of 16-bit values
+class WordDataItem(DataItem):
+     def toBytes(self):
+-        return array.array('B', struct.pack('<H', int(self._value))) # remove
++        return array.array('B', struct.pack('<I', int(self._value))) # add
+```

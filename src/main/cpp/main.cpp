@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include "VProcessor.h"
+#include "VCFU.h"
 
 #include "Module.h"
 #include "Memory.h"
@@ -38,7 +38,7 @@ static std::vector<uint16_t> program1 = {
     0b1110110000000111,
 };
 
-class Processor : public Module<VProcessor>
+class Processor : public Module<VCFU>
 {
 public:
     Processor(std::string tracefile, int verbosity = 0) :
@@ -56,7 +56,7 @@ public:
                 io_mem_write_data);
         }
 
-        Module<VProcessor>::step();
+        Module<VCFU>::step();
     }
 
 private:
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     Processor top(tracefile, verbosity);
 
     /* Initialize Memory */
-    Memory<uint16_t> memory(1024);
+    Memory<uint32_t> memory(1024);
 
     /* Initialize Program */
     std::vector<uint16_t> program;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     for (auto ins : program)
     {
         memory[i] = ins;
-        i = i + 2;
+        i = i + sizeof(ins);
     }
 
     while (!top.io_halt)

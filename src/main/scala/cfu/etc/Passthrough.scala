@@ -1,4 +1,4 @@
-package cpu
+package cfu
 
 import chisel3._
 
