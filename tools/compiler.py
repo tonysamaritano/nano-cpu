@@ -380,7 +380,7 @@ class DataItem():
 
 class WordDataItem(DataItem):
     def toBytes(self):
-        return array.array('B', struct.pack('<H', int(self._value)))
+        return array.array('B', struct.pack('<I', int(self._value)))
 
 class StringDataItem(DataItem):
     def toBytes(self):

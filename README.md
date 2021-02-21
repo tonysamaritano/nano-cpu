@@ -52,7 +52,7 @@ gtkwave build/subroutine.vcd
 ```
 ![alt text](examples/subroutine.png "Title")
 
-# ISA 2.1
+# CFU ISA
 Its useful to break down an ISA into its component parts: arithmatic, load/store, branch, and CSR. I think the 8-bit CPU is too limiting for this project because you have no overhead to do anything significant. I think I'd rather change the architecture to a limited 16-bit architecture so that I don't need to deal with the complexities of fitting everything into such a small space.
 
 I want to put all opcodes into a 3-bit space and then the different types of can be organized accordingly.
@@ -75,7 +75,6 @@ The register stucture will be simular to RISC-V with a zero register and the PC 
 |Register|Register Name|Desciption|
 |-|-|-|
 |pc|pc|Program Counter|
-|fl|Flags|Flags Register|
 
 I think this will be a nice, simple way for the processor to be mildly useful.
 
@@ -185,3 +184,37 @@ As you can see in the examples above, both data items and subroutines can be pla
 |`entry`|Tells the linker what function to jump to on start|
 
 All compiled programs must have 1 `entry` symbol for the entry location. On start, the program will jump to where ever the entry program is.
+
+# Appendix
+## Switch between 32-bit and 16-bit
+There isn't much that needs to be done to switch between 32-bit and 16-bit:
+
+In `src/main/scala/cfu/config/Parameters.scala`:
+```scala
+// This tells the generator to use X bit registers
+object Config {
+     /* Parameters */
+     def REGFILE_SIZE     = 8
+-    def ARCH_SIZE        = 16 // remove
++    def ARCH_SIZE        = 32 // add
+     def INS_SIZE         = 16
+     def WORD_SIZE        = ARCH_SIZE
+ }
+```
+
+In `src/main/cpp/main.cpp`:
+```cpp
+     // Initialize as an uint32_t instead of uint16_t
+     /* Initialize Memory */
+-    Memory<uint16_t> memory(1024); // remove
++    Memory<uint32_t> memory(1024); // add
+```
+
+In `tools/compiler.py`:
+```py
+# packs data into 32-bit values instead of 16-bit values
+class WordDataItem(DataItem):
+     def toBytes(self):
+-        return array.array('B', struct.pack('<H', int(self._value))) # remove
++        return array.array('B', struct.pack('<I', int(self._value))) # add
+```
