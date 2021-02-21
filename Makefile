@@ -1,5 +1,6 @@
-TOP=VProcessor
-SRC=Processor.v
+TOP=VCFU
+SRC=CFU.v
+SRC_DIR=src/main/cpp
 BIN_DIR=build
 JAVA_DIR=target
 
@@ -19,17 +20,17 @@ clean:
 
 compile-verilog:
 	mkdir -p ${BIN_DIR}
-	sbt "runMain cpu.main --target-dir ${BIN_DIR}"
+	sbt "runMain cfu.main --target-dir ${BIN_DIR}"
 
 verilate:
 	# Verilator creates cpp code out of verilog files
 	verilator \
 		--cc ${BIN_DIR}/${SRC} \
-		--exe src/main/cpp/main.cpp \
+		--exe ${SRC_DIR}/main.cpp \
 		--trace \
 		--Mdir ${BIN_DIR} \
 		-CFLAGS -g \
-		-CFLAGS -I../src/main/cpp/include
+		-CFLAGS -I../${SRC_DIR}/include
 
 	# Compiles generated cpp into library
 	$(MAKE) -j -C ${BIN_DIR} -f ${TOP}.mk ${TOP}__ALL.a
